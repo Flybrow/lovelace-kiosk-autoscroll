@@ -1,0 +1,6 @@
+{
+  "name": "Kiosk Auto Scroll",
+  "filename": "kiosk-autoscroll.js",
+  "render_readme": true,
+  "homeassistant": "2023.1.0"
+}
