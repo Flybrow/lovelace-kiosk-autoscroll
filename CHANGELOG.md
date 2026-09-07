@@ -1,5 +1,30 @@
 # Journal des modifications
 
+## 2.3.0 — 7 septembre 2026
+
+- **Invisibilité totale en production** : dans les vues « sections » (Home
+  Assistant 2024.3+), la carte ne laisse plus de cellule vide dans la grille —
+  le conteneur qui l'entoure est masqué avec elle. Emprise nulle également
+  déclarée via `getGridOptions()`.
+- **Correction** : une carte présente mais **désactivée**, ou **interdite à
+  l'utilisateur** courant, n'interrompait pas la rotation globale héritée d'une
+  autre vue ; le défilement continuait à tort (et contournait le filtre
+  utilisateur).
+- **Correction** : la rotation de tableau de bord traversait les **sous-vues**
+  (`subview: true`) et les **vues masquées** (`visible`). Elles sont désormais
+  exclues.
+- **Correction** : la pause consécutive à une interaction n'était pas
+  réinitialisée lors d'un changement de vue ; la nouvelle vue restait figée
+  jusqu'à 8 s.
+- **Économie de ressources** : hors plage horaire, entité inactive, mode édition
+  ou pause, la boucle d'animation ne tourne plus à 60 images/s — elle passe sur
+  un minuteur (1 s au repos, 250 ms pendant les pauses).
+- **Configuration validée** : une configuration invalide (mode, axe, valeurs
+  négatives, `activeHours` mal formé) lève désormais une erreur explicite dans
+  l'éditeur au lieu d'être acceptée silencieusement.
+- Version minimale de Home Assistant portée à **2023.9** (requise par l'éditeur
+  graphique), et documentation interne remise à jour.
+
 ## 2.2.1 — 20 juin 2026
 
 - Après une interaction, le défilement reprend désormais dans le **sens où il

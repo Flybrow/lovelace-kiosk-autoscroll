@@ -130,7 +130,8 @@ allers-retours sur sa vue : arrivée en bas, elle **passe à la vue suivante** d
 tableau de bord, et ainsi de suite en boucle.
 
 - Le défilement couvre alors **toutes les pages**, y compris celles **sans
-  carte**.
+  carte**. Les **sous-vues** (`subview: true`) et les **vues masquées** pour
+  l'utilisateur (`visible`) sont exclues de la rotation.
 - **Une carte par page** : si une autre vue possède sa propre carte Kiosk, c'est
   elle qui pilote cette page (réglages locaux prioritaires).
 - Quand on **quitte le tableau de bord**, la rotation s'arrête.
@@ -204,8 +205,20 @@ users:
 ## FAQ
 
 **La carte est visible / prend de la place ?**
-Non, elle est invisible en utilisation normale. Elle n'affiche un encart (titre
-et résumé des réglages) qu'en **mode édition**, pour rester repérable.
+Non. En utilisation normale elle est **totalement invisible et n'occupe aucune
+place** : dans une vue **sections**, le conteneur de grille qui l'entoure est
+masqué lui aussi, donc aucune cellule vide ne subsiste. Elle n'affiche un encart
+(titre et résumé des réglages) qu'en **mode édition**, pour rester repérable.
+
+**Le défilement continue alors que j'ai décoché « activé » / que je ne suis pas
+l'utilisateur autorisé ?**
+Corrigé en 2.3.0. Une carte présente mais désactivée (ou interdite à
+l'utilisateur courant) interrompt désormais aussi une rotation globale héritée
+d'une autre vue.
+
+**La rotation passe par des vues que je ne veux pas afficher.**
+Depuis la 2.3.0, les **sous-vues** (`subview: true`) et les **vues masquées**
+(`visible`) sont automatiquement exclues de la rotation.
 
 **Rien ne défile.**
 Vérifiez que vous n'êtes pas en mode édition, que la page contient assez de

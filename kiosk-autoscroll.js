@@ -57,6 +57,25 @@
     return cur >= a || cur < b;
   }
 
+  // Une vue est-elle eligible a la rotation ? (sous-vues et vues masquees exclues)
+  function viewEligible(view, hass) {
+    if (!view || view.subview === true) return false;
+    const vis = view.visible;
+    if (vis === undefined || vis === null) return true;
+    if (vis === false) return false;
+    if (vis === true) return true;
+    if (Array.isArray(vis)) {
+      const uid = hass && hass.user ? hass.user.id : null;
+      if (!uid) return false;
+      for (let i = 0; i < vis.length; i++) {
+        const v = vis[i];
+        if (v && v.user === uid) return true;
+      }
+      return false;
+    }
+    return true;
+  }
+
   function entityActive(hass, entity) {
     if (!entity) return true;
     if (!hass || !hass.states || !hass.states[entity]) return true;
@@ -183,23 +202,31 @@
     return parts.length ? parts[0] : "";
   }
 
-  function gotoNextView() {
+  function gotoNextView(hass) {
     const ll = getLovelace();
-    if (!ll || !ll.config || !Array.isArray(ll.config.views) || ll.config.views.length < 2) {
-      return false;
-    }
+    if (!ll || !ll.config || !Array.isArray(ll.config.views)) return false;
     const parts = location.pathname.split("/").filter(Boolean);
     if (!parts.length) return false;
     const dashboard = parts[0];
     const current = parts.length > 1 ? parts[1] : "";
     const views = ll.config.views;
+
+    // Indices des vues affichables uniquement (pas de sous-vue, pas de vue masquee)
+    const pool = [];
+    for (let i = 0; i < views.length; i++) {
+      if (viewEligible(views[i], hass)) pool.push(i);
+    }
+    if (pool.length < 2) return false;
+
     let idx = -1;
     for (let i = 0; i < views.length; i++) {
       const seg = views[i].path != null ? String(views[i].path) : String(i);
       if (seg === current) { idx = i; break; }
     }
-    if (idx < 0) idx = 0;
-    const next = (idx + 1) % views.length;
+    // Position dans le pool ; si la vue courante n'y est pas, on repart du debut
+    let p = pool.indexOf(idx);
+    if (p < 0) p = -1;
+    const next = pool[(p + 1) % pool.length];
     const nv = views[next];
     const seg = nv.path != null ? nv.path : next;
     history.pushState(null, "", "/" + dashboard + "/" + seg);
@@ -216,7 +243,6 @@
   let lastActive = 0;
   let lastPauseOnInteraction = DEFAULTS.pauseOnInteraction;
   let lastTs = 0;
-  let multipleCards = false;
 
   const activeCards = new Set();
   let globalController = null;
@@ -226,22 +252,26 @@
     if (globalController && globalController.dashboard !== dash) globalController = null;
 
     let local = null;
-    let count = 0;
+    let blocked = false;
     activeCards.forEach(function (card) {
       if (!card.isConnected) return;
+      if (!card._hass) return; // pas encore initialisee : ni active, ni bloquante
       const c = Object.assign({}, DEFAULTS, card._config || {});
-      if (c.enabled === false) return;
-      if (!userAllowed(c, card._hass)) return;
-      count++;
+      // Une carte presente mais desactivee (ou interdite a cet utilisateur)
+      // doit aussi neutraliser une rotation globale heritee d'une autre vue.
+      if (c.enabled === false || !userAllowed(c, card._hass)) { blocked = true; return; }
       if (!local) local = { cfg: c, hass: card._hass };
     });
-    multipleCards = count > 1;
 
     if (local) {
       if (local.cfg.rotateViews) {
         globalController = { cfg: local.cfg, hass: local.hass, dashboard: dash };
       }
       return local;
+    }
+    if (blocked) {
+      globalController = null;
+      return null;
     }
     if (globalController) {
       return { cfg: globalController.cfg, hass: globalController.hass };
@@ -267,16 +297,33 @@
     legEndTs = 0;
     lastActive = 0;
     lastTs = 0;
+    userActiveUntil = 0;
   }
   window.addEventListener("location-changed", onNav);
   window.addEventListener("popstate", onNav);
 
+  // Cadence : rAF quand ca defile, minuteur quand c'est inhibe (economie CPU/batterie)
+  const IDLE_MS = 1000;
+  const PAUSE_POLL_MS = 250;
   let rafId = null;
+  let idleId = null;
+
   function running() {
     return (activeCards.size > 0 || globalController) && !document.hidden;
   }
+  function scheduleNext(waitMs) {
+    if (waitMs > 0) {
+      idleId = setTimeout(function () {
+        idleId = null;
+        lastTs = 0;
+        rafId = requestAnimationFrame(loop);
+      }, waitMs);
+    } else {
+      rafId = requestAnimationFrame(loop);
+    }
+  }
   function start() {
-    if (rafId === null) {
+    if (rafId === null && idleId === null) {
       lastTs = 0;
       rafId = requestAnimationFrame(loop);
     }
@@ -286,9 +333,13 @@
       cancelAnimationFrame(rafId);
       rafId = null;
     }
+    if (idleId !== null) {
+      clearTimeout(idleId);
+      idleId = null;
+    }
   }
   function ensureRunning() {
-    if (rafId === null && running()) start();
+    if (rafId === null && idleId === null && running()) start();
   }
 
   document.addEventListener("visibilitychange", function () {
@@ -297,16 +348,19 @@
   });
 
   function loop(ts) {
+    rafId = null;
     if (!activeCards.size && !globalController) { stop(); return; }
-    rafId = requestAnimationFrame(loop);
+    let wait = 0;
     try {
-      step(ts);
+      wait = step(ts) || 0;
     } catch (e) {}
+    scheduleNext(wait);
   }
 
+  // Retourne le nombre de ms a attendre avant le prochain passage (0 = frame suivante).
   function step(ts) {
     const entry = resolveEntry();
-    if (!entry) return;
+    if (!entry) return IDLE_MS;
     const cfg = entry.cfg;
     const hass = entry.hass;
     lastPauseOnInteraction = cfg.pauseOnInteraction;
@@ -315,20 +369,26 @@
     const dt = lastTs ? clamp(ts - lastTs, 0, 100) : 16;
     lastTs = ts;
 
-    if (now < pausedUntil) { lastActive = 0; return; }
-    if (document.hidden) { lastActive = 0; return; }
-    if (isEditMode()) { lastActive = 0; return; }
-    if (!withinHours(cfg.activeHours)) { lastActive = 0; return; }
-    if (!entityActive(hass, cfg.entity)) { lastActive = 0; return; }
+    if (now < pausedUntil) {
+      lastActive = 0;
+      return Math.min(pausedUntil - now, PAUSE_POLL_MS);
+    }
+    if (document.hidden) { lastActive = 0; return IDLE_MS; }
+    if (isEditMode()) { lastActive = 0; return IDLE_MS; }
+    if (!withinHours(cfg.activeHours)) { lastActive = 0; return IDLE_MS; }
+    if (!entityActive(hass, cfg.entity)) { lastActive = 0; return IDLE_MS; }
 
-    if (now < userActiveUntil) { lastActive = 0; return; }
+    if (now < userActiveUntil) {
+      lastActive = 0;
+      return Math.min(userActiveUntil - now, PAUSE_POLL_MS);
+    }
 
     const horiz = isHorizontal(cfg);
     const scroller = getScroller(horiz);
-    if (!scroller) return;
+    if (!scroller) return IDLE_MS;
 
     const max = getMax(scroller, horiz);
-    if (max <= 1) return;
+    if (max <= 1) return IDLE_MS;
     const pos = getPos(scroller, horiz);
 
     const durationMode = cfg.mode === "duration" && cfg.duration > 0;
@@ -367,7 +427,7 @@
       acc = 0;
       pausedUntil = now + cfg.pause;
       newLeg = true;
-      if (cfg.rotateViews && gotoNextView()) {
+      if (cfg.rotateViews && gotoNextView(hass)) {
         dir = 1;
       } else {
         dir = -1;
@@ -379,6 +439,7 @@
       newLeg = true;
       dir = 1;
     }
+    return 0;
   }
 
   function inEditorPreview(el) {
@@ -407,8 +468,44 @@
     });
   }
 
+  // Valide la config : Lovelace attend une exception pour afficher l'erreur a l'edition.
+  function validateConfig(c) {
+    if (c === null || typeof c !== "object") {
+      throw new Error("Configuration invalide.");
+    }
+    if (c.mode !== undefined && c.mode !== "speed" && c.mode !== "duration") {
+      throw new Error("mode doit valoir 'speed' ou 'duration'.");
+    }
+    if (c.axis !== undefined && c.axis !== "vertical" && c.axis !== "horizontal") {
+      throw new Error("axis doit valoir 'vertical' ou 'horizontal'.");
+    }
+    const positive = ["speed", "duration", "interval"];
+    for (let i = 0; i < positive.length; i++) {
+      const k = positive[i];
+      if (c[k] !== undefined && c[k] !== null) {
+        const n = Number(c[k]);
+        if (isNaN(n) || n <= 0) throw new Error(k + " doit etre un nombre strictement positif.");
+      }
+    }
+    const nonNeg = ["pause", "pauseOnInteraction"];
+    for (let i = 0; i < nonNeg.length; i++) {
+      const k = nonNeg[i];
+      if (c[k] !== undefined && c[k] !== null) {
+        const n = Number(c[k]);
+        if (isNaN(n) || n < 0) throw new Error(k + " doit etre un nombre positif ou nul.");
+      }
+    }
+    if (c.activeHours && !validHours(c.activeHours)) {
+      throw new Error("activeHours doit etre au format HH:MM-HH:MM (ex. 08:00-20:00).");
+    }
+    if (c.entity !== undefined && c.entity !== null && typeof c.entity !== "string") {
+      throw new Error("entity doit etre un identifiant d'entite.");
+    }
+  }
+
   class KioskAutoscrollCard extends HTMLElement {
     setConfig(config) {
+      validateConfig(config);
       this._config = config || {};
       this._render();
     }
@@ -422,6 +519,7 @@
       this._render();
     }
     connectedCallback() {
+      this._restoreHosts();
       this._preview = inEditorPreview(this);
       if (!this._preview) {
         activeCards.add(this);
@@ -432,20 +530,53 @@
     }
     disconnectedCallback() {
       activeCards.delete(this);
+      this._restoreHosts();
       if (!running()) stop();
       rerenderCards();
     }
     _isEditing() {
       return this._editMode === true || isEditMode();
     }
+    // Rend visible a nouveau tout conteneur masque par _hideHosts().
+    _restoreHosts() {
+      const hidden = this._hiddenHosts;
+      if (!hidden) return;
+      for (let i = 0; i < hidden.length; i++) {
+        hidden[i].el.style.display = hidden[i].prev;
+      }
+      hidden.length = 0;
+    }
+    // Hors edition, masquer la carte ne suffit pas : en vue « sections » (HA 2024.3+)
+    // le conteneur <hui-card> occupe une cellule de la grille et laisse un trou.
+    // On masque donc aussi les conteneurs de mise en page qui l'entourent.
+    _hideHosts() {
+      const hidden = this._hiddenHosts || (this._hiddenHosts = []);
+      if (hidden.length) return;
+      let node = this.parentNode;
+      let guard = 0;
+      while (node && guard < 4) {
+        guard++;
+        const tag = node.localName || "";
+        if (tag !== "hui-card" && tag !== "hui-card-options" && tag !== "hui-card-container") break;
+        hidden.push({ el: node, prev: node.style.display });
+        node.style.display = "none";
+        node = node.parentNode;
+      }
+    }
     _render() {
       this._lastEditing = this._isEditing();
       this.innerHTML = "";
       if (!this._lastEditing) {
         this.style.display = "none";
+        this.style.margin = "0";
+        this.style.padding = "0";
+        if (!this._preview) this._hideHosts();
         return;
       }
+      this._restoreHosts();
       this.style.display = "block";
+      this.style.margin = "";
+      this.style.padding = "";
       const c = this._config || {};
       const mode = c.mode === "duration" ? "durée fixe" : "vitesse fixe";
       const axis = c.axis === "horizontal" ? "horizontal" : "vertical";
@@ -495,6 +626,17 @@
     }
     getCardSize() {
       return this._isEditing() ? 1 : 0;
+    }
+    // Vues « sections » (HA 2024.3+) : emprise minimale a l'edition, nulle en production.
+    getGridOptions() {
+      if (this._isEditing()) {
+        return { rows: 2, columns: 12, min_rows: 1, min_columns: 6 };
+      }
+      return { rows: 0, columns: 0, min_rows: 0, min_columns: 0 };
+    }
+    // Ancien nom de l'API (HA 2024.3 -> 2024.10).
+    getLayoutOptions() {
+      return this.getGridOptions();
     }
     static getConfigElement() {
       return document.createElement("kiosk-autoscroll-card-editor");
