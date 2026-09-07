@@ -1,125 +1,128 @@
-# Journal des modifications
+# Changelog
 
-🇬🇧 **[English version](CHANGELOG.en.md)**
+🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
-## 2.5.0 — 7 septembre 2026
+## 2.5.1 — 7 September 2026
 
-Regroupe les versions 2.3.0 et 2.4.0, publiées le même jour.
+- **English is now the default documentation.** HACS performs no language
+  negotiation and only ever renders `README.md`, so that file is now the English
+  one. The French versions moved to
+  [README.fr.md](README.fr.md) and [CHANGELOG.fr.md](CHANGELOG.fr.md), linked at
+  the top of each file. No change to the plugin itself.
 
-### Nouveautés
+## 2.5.0 — 7 September 2026
 
-- **Anglais et français** : la carte et son éditeur sont désormais traduits.
-  L'affichage suit automatiquement la **langue de Home Assistant** de
-  l'utilisateur connecté, avec repli sur l'**anglais** pour toute autre langue.
-  Nouvelle option **`language`** (`auto` par défaut, `en`, `fr`) pour forcer la
-  langue. Documentation anglaise dans [README.en.md](README.en.md).
-- **Nouvelle option `hideScrollbar`** (Réglages avancés, désactivée par défaut) :
-  masque la barre de défilement de la vue pour un rendu plein écran, sans
-  empêcher le défilement manuel. Compatible Chrome/WebView, Firefox et Safari.
-  La barre est rétablie automatiquement en mode édition, au changement de vue et
-  au retrait de la carte.
-- **Invisibilité totale en production** : dans les vues « sections » (Home
-  Assistant 2024.3+), la carte ne laisse plus de cellule vide dans la grille —
-  le conteneur qui l'entoure est masqué avec elle. Emprise nulle également
-  déclarée via `getGridOptions()`.
+Combines versions 2.3.0 and 2.4.0, released the same day.
 
-### Corrections
+### New
 
-- Une carte présente mais **désactivée**, ou **interdite à l'utilisateur**
-  courant, n'interrompait pas la rotation globale héritée d'une autre vue ; le
-  défilement continuait à tort (et contournait le filtre utilisateur).
-- La rotation de tableau de bord traversait les **sous-vues** (`subview: true`)
-  et les **vues masquées** (`visible`). Elles sont désormais exclues.
-- La pause consécutive à une interaction n'était pas réinitialisée lors d'un
-  changement de vue ; la nouvelle vue restait figée jusqu'à 8 s.
+- **English and French**: the card and its editor are now translated. The
+  display automatically follows the **Home Assistant language** of the logged-in
+  user, falling back to **English** for any other language. New **`language`**
+  option (`auto` by default, `en`, `fr`) to force a language.
+- **New `hideScrollbar` option** (Advanced settings, off by default): hides the
+  view's scrollbar for a full-screen look, without preventing manual scrolling.
+  Works on Chrome/WebView, Firefox and Safari. The scrollbar is restored
+  automatically in edit mode, when changing view and when the card is removed.
+- **Completely invisible in production**: in **sections** views (Home Assistant
+  2024.3+), the card no longer leaves an empty cell in the grid — the container
+  around it is hidden as well. Zero footprint also declared through
+  `getGridOptions()`.
 
-### Divers
+### Fixes
 
-- **Économie de ressources** : hors plage horaire, entité inactive, mode édition
-  ou pause, la boucle d'animation ne tourne plus à 60 images/s — elle passe sur
-  un minuteur (1 s au repos, 250 ms pendant les pauses).
-- **Configuration validée** : une configuration invalide (mode, axe, valeurs
-  négatives, `activeHours` mal formé) lève désormais une erreur explicite dans
-  l'éditeur au lieu d'être acceptée silencieusement.
-- Version minimale de Home Assistant portée à **2023.9** (requise par l'éditeur
-  graphique), et documentation interne remise à jour.
+- A card that was present but **disabled**, or **not allowed for the current
+  user**, did not stop a global rotation inherited from another view; scrolling
+  wrongly continued (and bypassed the user filter).
+- Dashboard rotation walked through **subviews** (`subview: true`) and **hidden
+  views** (`visible`). They are now excluded.
+- The pause following an interaction was not reset when changing view, leaving
+  the new view frozen for up to 8 s.
 
-## 2.2.1 — 20 juin 2026
+### Other
 
-- Après une interaction, le défilement reprend désormais dans le **sens où il
-  allait avant** votre geste (et non plus dans le sens du geste), depuis la
-  position où vous l'avez laissé.
-- Nouveau logo.
+- **Lower resource use**: outside the active time range, with an inactive
+  entity, in edit mode or while paused, the animation loop no longer runs at
+  60 fps — it switches to a timer (1 s when idle, 250 ms during pauses).
+- **Validated configuration**: an invalid configuration (mode, axis, negative
+  values, malformed `activeHours`) now raises an explicit error in the editor
+  instead of being silently accepted.
+- Minimum Home Assistant version raised to **2023.9** (required by the graphical
+  editor), and internal documentation refreshed.
 
-## 2.2.0 — 20 juin 2026
+## 2.2.1 — 20 June 2026
 
-- Panneau de réglages simplifié : seuls **3 réglages essentiels** restent visibles
-  (mode, vitesse/durée, pause). Tout le reste est rangé dans **Réglages avancés**.
-- Champ « Finesse de la vitesse » retiré (les anciennes configurations restent
-  compatibles).
+- After an interaction, scrolling now resumes **in the direction it was going
+  before** your gesture (rather than the direction of the gesture), from the
+  position where you left it.
+- New logo.
 
-## 2.1.1 — 20 juin 2026
+## 2.2.0 — 20 June 2026
 
-- Correction : le message « Plusieurs cartes Kiosk sur cette page » s'affichait à
-  tort en entrant en mode édition alors qu'il n'y avait qu'une seule carte.
+- Simplified settings panel: only **3 essential settings** stay visible (mode,
+  speed/duration, pause). Everything else moved to **Advanced settings**.
+- "Speed granularity" field removed (older configurations remain compatible).
 
-## 2.1.0 — 20 juin 2026
+## 2.1.1 — 20 June 2026
 
-- **Rotation sur tout le tableau de bord** : avec l'option activée, une seule
-  carte fait défiler toutes les pages, page après page (même celles sans carte).
-  Une carte posée sur une autre page reste prioritaire sur cette page.
-- **Durée vraiment constante** : en mode durée, le temps de parcours reste stable
-  même si le contenu de la page change de taille.
-- **Reprise intelligente** : après une interaction, le défilement repart dans le
-  sens de votre geste (molette, flèches).
-- **Défilement horizontal** en option (vues en colonnes, panneaux larges).
-- **Choix des personnes** autorisées via un sélecteur, au lieu d'un champ texte.
-- **Message d'erreur** si la plage horaire est mal écrite, et avertissement si
-  plusieurs cartes sont posées sur la même page.
-- Détection du conteneur à faire défiler plus fiable selon les thèmes/mises en page.
-- Comportement remis à zéro proprement à chaque changement de vue.
+- Fix: the "Several Kiosk cards on this page" message was wrongly shown when
+  entering edit mode with only one card present.
 
-## 2.0.1 — 20 juin 2026
+## 2.1.0 — 20 June 2026
 
-- Panneau de réglages de la carte plus clair : chaque option a une **description**,
-  les réglages avancés sont regroupés dans une section repliable, et seuls les
-  champs utiles au mode choisi sont affichés.
+- **Whole-dashboard rotation**: with the option enabled, a single card scrolls
+  every page, one after another (including pages without a card). A card placed
+  on another page keeps priority on that page.
+- **Truly constant duration**: in duration mode, travel time stays stable even
+  if the page content changes size.
+- **Smart resume**: after an interaction, scrolling restarts in the direction of
+  your gesture (wheel, arrow keys).
+- Optional **horizontal scrolling** (column views, wide panels).
+- **User picker** for allowed people, instead of a text field.
+- **Error message** when the time range is malformed, and a warning when several
+  cards are placed on the same page.
+- More reliable detection of the scrolling container across themes and layouts.
+- State cleanly reset on every view change.
 
-## 2.0.0 — 20 juin 2026
+## 2.0.1 — 20 June 2026
 
-- Défilement **plus fluide**, avec un ralenti doux en haut et en bas.
-- Nouveau mode **durée fixe** : la vue est parcourue en un temps choisi, quelle
-  que soit sa longueur (en plus du mode vitesse classique).
-- **Rotation des vues** : possibilité de passer automatiquement à la vue suivante
-  une fois en bas.
-- Le défilement peut être conditionné à une **entité** (ex. un interrupteur) et
-  à une **plage horaire**.
-- Éditeur de carte amélioré (interface native Home Assistant).
+- Clearer card settings panel: every option has a **description**, advanced
+  settings are grouped in a collapsible section, and only the fields relevant to
+  the chosen mode are displayed.
 
-## 1.2.0 — 20 juin 2026
+## 2.0.0 — 20 June 2026
 
-- Défilement plus léger et plus fluide (moins de charge sur les tablettes et
-  écrans muraux).
-- Le défilement se met en veille quand l'écran/onglet n'est pas affiché, pour
-  économiser la batterie.
-- Correctifs de sécurité et de robustesse.
+- **Smoother** scrolling, with gentle easing at the top and bottom.
+- New **fixed duration** mode: the view is travelled in a chosen time, whatever
+  its length (in addition to the classic speed mode).
+- **View rotation**: option to automatically move to the next view once at the
+  bottom.
+- Scrolling can be conditioned on an **entity** (e.g. a switch) and on a **time
+  range**.
+- Improved card editor (native Home Assistant interface).
 
-## 1.1.1 — 20 juin 2026
+## 1.2.0 — 20 June 2026
 
-- Correction : en mode édition du tableau de bord, la carte s'affiche bien et le
-  défilement s'arrête.
+- Lighter and smoother scrolling (less load on tablets and wall displays).
+- Scrolling goes to sleep when the screen/tab is not displayed, to save battery.
+- Safety and robustness fixes.
 
-## 1.1.0 — 20 juin 2026
+## 1.1.1 — 20 June 2026
 
-- Nouvel **éditeur graphique** : on règle la carte sans toucher au YAML.
-- Possibilité de **ralentir fortement** le défilement (valeurs inférieures à 1).
-- En mode édition, la carte affiche un encart visible (titre + description) ;
-  le défilement est suspendu pendant qu'on édite.
-- Le plugin fonctionne désormais **uniquement via la carte**.
+- Fix: in dashboard edit mode, the card is properly displayed and scrolling
+  stops.
 
-## 1.0.0 — 20 juin 2026
+## 1.1.0 — 20 June 2026
 
-- Première version : défilement automatique des vues en boucle (mode kiosque),
-  avec pause en haut/bas et pause pendant l'interaction.
-- Carte invisible à ajouter sur le tableau de bord pour activer le défilement.
-- Filtre par utilisateur Home Assistant.
+- New **graphical editor**: configure the card without touching YAML.
+- Ability to scroll **much more slowly** (values below 1).
+- In edit mode, the card shows a visible box (title + description); scrolling is
+  suspended while editing.
+- The plugin now works **only through the card**.
+
+## 1.0.0 — 20 June 2026
+
+- First release: automatic looping view scrolling (kiosk mode), with pauses at
+  the top/bottom and while interacting.
+- Invisible card to add to the dashboard to enable scrolling.
+- Home Assistant user filter.

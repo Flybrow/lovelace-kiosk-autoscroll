@@ -8,198 +8,192 @@
 [![Validate](https://github.com/Flybrow/lovelace-kiosk-autoscroll/actions/workflows/validate.yml/badge.svg)](https://github.com/Flybrow/lovelace-kiosk-autoscroll/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-🇬🇧 **[English version](README.en.md)**
+🇫🇷 **[Version française](README.fr.md)**
 
-Plugin Lovelace qui fait **défiler automatiquement vos vues Home Assistant**, de
-haut en bas puis de bas en haut, en boucle — un vrai **mode kiosque** pour écrans
-muraux, tablettes et tableaux de bord de supervision.
+A Lovelace plugin that **scrolls your Home Assistant views automatically**, top
+to bottom then back up, in a loop — a real **kiosk mode** for wall displays,
+tablets and control dashboards.
 
-Sa particularité : le défilement s'active par une **carte invisible** posée sur
-le tableau de bord voulu. Pas de réglage global, pas de défilement intempestif
-ailleurs — ça ne défile **que** là où vous avez ajouté la carte.
+What makes it different: scrolling is enabled by an **invisible card** placed on
+the dashboard you choose. No global setting, no unwanted scrolling elsewhere —
+it only scrolls **where you added the card**.
 
-![Éditeur de la carte Kiosk Auto Scroll](https://raw.githubusercontent.com/Flybrow/lovelace-kiosk-autoscroll/main/assets/screenshot.png)
+![Kiosk Auto Scroll card editor](https://raw.githubusercontent.com/Flybrow/lovelace-kiosk-autoscroll/main/assets/screenshot.png)
 
-## Sommaire
+## Contents
 
-- [Points forts](#points-forts)
+- [Highlights](#highlights)
 - [Installation](#installation)
-- [Prise en main](#prise-en-main)
-- [Toutes les options](#toutes-les-options)
-  - [Défilement](#défilement)
+- [Getting started](#getting-started)
+- [All options](#all-options)
+  - [Scrolling](#scrolling)
   - [Pauses](#pauses)
-  - [Rotation de tout le tableau de bord](#rotation-de-tout-le-tableau-de-bord)
-  - [Conditions d'activation](#conditions-dactivation)
-  - [Langue](#langue)
-- [Quand le défilement se met en pause](#quand-le-défilement-se-met-en-pause)
-- [Exemples](#exemples)
+  - [Rotating through the dashboard](#rotating-through-the-dashboard)
+  - [Activation conditions](#activation-conditions)
+  - [Language](#language)
+- [When scrolling pauses](#when-scrolling-pauses)
+- [Examples](#examples)
 - [FAQ](#faq)
-- [Licence](#licence)
+- [License](#license)
 
-## Points forts
+## Highlights
 
-- 🪶 **Léger** : JavaScript natif, **aucune dépendance**, aucun build.
-- 🎯 **Ciblé** : activé par une carte invisible, vue par vue.
-- 🌊 **Fluide** : moteur `requestAnimationFrame`, avec ralenti doux aux extrémités.
-- ⏱️ **Deux modes** : vitesse constante ou durée de parcours constante.
-- ↕️ **Vertical ou horizontal**.
-- 🫥 **Plein écran** : masquage optionnel de la barre de défilement.
-- 🔁 **Rotation** : une seule carte peut faire défiler tout le tableau de bord.
-- 🙅 **Respectueux** : se met en pause dès que l'utilisateur touche l'écran,
-  puis reprend là où il en était.
-- 🔧 **Conditionnel** : par utilisateur, par entité, par plage horaire.
-- 🌍 **Multilingue** : anglais et français, selon la langue de Home Assistant.
-- 🖥️ **Éditeur graphique** intégré.
+- 🪶 **Lightweight**: vanilla JavaScript, **no dependencies**, no build step.
+- 🎯 **Targeted**: enabled by an invisible card, view by view.
+- 🌊 **Smooth**: `requestAnimationFrame` engine, with gentle easing at the ends.
+- ⏱️ **Two modes**: constant speed or constant travel duration.
+- ↕️ **Vertical or horizontal**.
+- 🫥 **Full screen**: optional scrollbar hiding.
+- 🔁 **Rotation**: a single card can scroll the whole dashboard.
+- 🙅 **Respectful**: pauses as soon as the user touches the screen, then resumes
+  where it left off.
+- 🔧 **Conditional**: per user, per entity, per time range.
+- 🌍 **Multilingual**: English and French, following the Home Assistant language.
+- 🖥️ Built-in **graphical editor**.
 
 ## Installation
 
-### Via HACS (recommandé)
+### Through HACS (recommended)
 
-1. HACS → menu ⋮ → **Custom repositories**.
-2. Ajoutez l'URL de ce dépôt, catégorie **Tableau de bord** (Dashboard).
-3. Installez **Kiosk Auto Scroll**, puis rechargez la page (videz le cache du
-   navigateur si besoin). HACS ajoute la ressource automatiquement.
+1. HACS → ⋮ menu → **Custom repositories**.
+2. Add this repository URL, category **Dashboard**.
+3. Install **Kiosk Auto Scroll**, then reload the page (clear the browser cache
+   if needed). HACS adds the resource automatically.
 
-### Manuelle
+### Manual
 
-1. Copiez `kiosk-autoscroll.js` dans `/config/www/`.
-2. Déclarez une ressource de type **Module JavaScript** pointant vers
-   `/local/kiosk-autoscroll.js` (Paramètres → Tableaux de bord → Ressources).
+1. Copy `kiosk-autoscroll.js` into `/config/www/`.
+2. Declare a **JavaScript Module** resource pointing to
+   `/local/kiosk-autoscroll.js` (Settings → Dashboards → Resources).
 
-## Prise en main
+## Getting started
 
-1. Ouvrez le tableau de bord à faire défiler.
-2. **Modifier le tableau de bord** → **Ajouter une carte** → cherchez
-   **Kiosk Auto Scroll**.
-3. Réglez les options dans l'éditeur graphique, puis enregistrez.
-4. C'est tout : la carte est **invisible** en utilisation normale et le
-   défilement démarre. Pour désactiver, supprimez simplement la carte.
+1. Open the dashboard you want to scroll.
+2. **Edit dashboard** → **Add card** → search for **Kiosk Auto Scroll**.
+3. Adjust the options in the graphical editor, then save.
+4. That's it: the card is **invisible** in normal use and scrolling starts. To
+   disable it, simply delete the card.
 
-> Une carte ne pilote que la vue où elle se trouve. Pour faire défiler plusieurs
-> vues, ajoutez une carte sur chacune — ou activez la
-> [rotation](#rotation-de-tout-le-tableau-de-bord) sur une seule carte.
+> A card only drives the view it sits on. To scroll several views, add a card to
+> each — or enable [rotation](#rotating-through-the-dashboard) on a single card.
 
-Configuration minimale en YAML :
+Minimal YAML configuration:
 
 ```yaml
 type: custom:kiosk-autoscroll-card
 ```
 
-Toutes les options ont une valeur par défaut : une carte sans réglage défile
-déjà correctement.
+Every option has a default: a card with no settings already scrolls correctly.
 
-## Toutes les options
+## All options
 
-| Option               | Type            | Défaut     | Description courte                                  |
-| -------------------- | --------------- | ---------- | -------------------------------------------------- |
-| `mode`               | `speed`/`duration` | `speed` | Vitesse constante ou durée de parcours constante.  |
-| `speed`              | nombre          | `1`        | Vitesse (mode `speed`). Plus grand = plus rapide.  |
-| `duration`           | nombre (s)      | `60`       | Durée d'un aller (mode `duration`).                |
-| `axis`               | `vertical`/`horizontal` | `vertical` | Sens du défilement.                       |
-| `easing`             | booléen         | `true`     | Ralenti progressif aux extrémités.                 |
-| `hideScrollbar`      | booléen         | `false`    | Masque la barre de défilement.                     |
-| `pause`              | nombre (ms)     | `4000`     | Pause à chaque extrémité.                          |
-| `pauseOnInteraction` | nombre (ms)     | `8000`     | Pause après une interaction utilisateur.           |
-| `rotateViews`        | booléen         | `false`    | Fait défiler tout le tableau de bord, vue par vue. |
-| `entity`             | entité          | —          | N'active le défilement que si l'entité est allumée.|
-| `activeHours`        | texte           | —          | Plage horaire d'activité, ex. `08:00-20:00`.       |
-| `users`              | liste           | —          | Limite à certaines personnes / utilisateurs.       |
-| `language`           | `auto`/`en`/`fr`| `auto`     | Langue de la carte et de son éditeur.              |
+| Option               | Type             | Default    | Short description                                |
+| -------------------- | ---------------- | ---------- | ------------------------------------------------ |
+| `mode`               | `speed`/`duration` | `speed`  | Constant speed or constant travel duration.      |
+| `speed`              | number           | `1`        | Speed (`speed` mode). Higher = faster.           |
+| `duration`           | number (s)       | `60`       | Duration of one pass (`duration` mode).          |
+| `axis`               | `vertical`/`horizontal` | `vertical` | Scrolling direction.                    |
+| `easing`             | boolean          | `true`     | Gradual slowdown at the ends.                    |
+| `hideScrollbar`      | boolean          | `false`    | Hides the scrollbar.                             |
+| `pause`              | number (ms)      | `4000`     | Pause at each end.                               |
+| `pauseOnInteraction` | number (ms)      | `8000`     | Pause after a user interaction.                  |
+| `rotateViews`        | boolean          | `false`    | Scrolls the whole dashboard, view by view.       |
+| `entity`             | entity           | —          | Only scroll while the entity is on.              |
+| `activeHours`        | text             | —          | Active time range, e.g. `08:00-20:00`.           |
+| `users`              | list             | —          | Restrict to certain people / users.              |
+| `language`           | `auto`/`en`/`fr` | `auto`     | Language of the card and its editor.             |
 
-### Défilement
+### Scrolling
 
-- **`mode: speed`** (défaut) — vitesse constante.
-  - **`speed`** règle la rapidité. Repères : `0.25` = très lent, `1` = normal,
-    `3` = rapide. Les valeurs décimales sont acceptées (défilement sous-pixel,
-    donc réellement plus lent que 1 px par image).
-  - **`easing`** (défaut `true`) ralentit en douceur en approchant du haut et du
-    bas, pour un rendu moins brusque.
-- **`mode: duration`** — la vue est parcourue d'un bout à l'autre en
-  **`duration`** secondes, **quelle que soit sa longueur**. La durée reste stable
-  même si le contenu change de taille pendant le défilement (cartes qui se
-  chargent, graphiques qui s'agrandissent…).
-- **`axis`** — `vertical` (haut/bas, défaut) ou `horizontal` (gauche/droite),
-  utile pour les vues en colonnes ou les panneaux larges.
-- **`hideScrollbar`** (défaut `false`) — masque la barre de défilement de la vue
-  pour un rendu plein écran, sans changer le comportement : le défilement au
-  doigt, à la molette ou au clavier reste possible. La barre est **rétablie
-  automatiquement** en mode édition, en quittant la vue et si vous retirez la
-  carte. Fonctionne aussi bien sur Chrome/WebView que Firefox et Safari.
+- **`mode: speed`** (default) — constant speed.
+  - **`speed`** sets how fast it goes. Reference points: `0.25` = very slow,
+    `1` = normal, `3` = fast. Decimal values are accepted (sub-pixel scrolling,
+    so genuinely slower than 1 px per frame).
+  - **`easing`** (default `true`) slows down gently near the top and bottom, for
+    a less abrupt result.
+- **`mode: duration`** — the view is travelled end to end in **`duration`**
+  seconds, **whatever its length**. The duration stays stable even if the
+  content changes size while scrolling (cards loading, graphs expanding…).
+- **`axis`** — `vertical` (up/down, default) or `horizontal` (left/right),
+  useful for column views and wide panels.
+- **`hideScrollbar`** (default `false`) — hides the view's scrollbar for a
+  full-screen look, without changing behaviour: touch, wheel and keyboard
+  scrolling still work. The scrollbar is **restored automatically** in edit
+  mode, when leaving the view and if you remove the card. Works on
+  Chrome/WebView, Firefox and Safari alike.
 
 ### Pauses
 
-- **`pause`** — temps d'arrêt à chaque extrémité avant de repartir dans l'autre
-  sens (en millisecondes ; `4000` = 4 s).
-- **`pauseOnInteraction`** — quand l'utilisateur agit (toucher, clic, molette,
-  flèches), le défilement se met en pause pendant ce délai, puis **reprend dans
-  le sens où il allait** avant l'interaction (la position atteinte manuellement
-  est conservée).
+- **`pause`** — dwell time at each end before heading back the other way (in
+  milliseconds; `4000` = 4 s).
+- **`pauseOnInteraction`** — when the user acts (touch, click, wheel, arrow
+  keys), scrolling pauses for this delay, then **resumes in the direction it was
+  going** before the interaction (the position you scrolled to is kept).
 
-### Rotation de tout le tableau de bord
+### Rotating through the dashboard
 
-Avec **`rotateViews: true`**, la carte ne se contente plus de faire des
-allers-retours sur sa vue : arrivée en bas, elle **passe à la vue suivante** du
-tableau de bord, et ainsi de suite en boucle.
+With **`rotateViews: true`**, the card no longer just goes back and forth on its
+own view: once at the bottom, it **moves to the next view** of the dashboard,
+and so on in a loop.
 
-- Le défilement couvre alors **toutes les pages**, y compris celles **sans
-  carte**. Les **sous-vues** (`subview: true`) et les **vues masquées** pour
-  l'utilisateur (`visible`) sont exclues de la rotation.
-- **Une carte par page** : si une autre vue possède sa propre carte Kiosk, c'est
-  elle qui pilote cette page (réglages locaux prioritaires).
-- Quand on **quitte le tableau de bord**, la rotation s'arrête.
+- Scrolling then covers **all pages**, including those **without a card**.
+  **Subviews** (`subview: true`) and views **hidden** from the user (`visible`)
+  are excluded from the rotation.
+- **One card per page**: if another view has its own Kiosk card, that card drives
+  its page (local settings take priority).
+- When you **leave the dashboard**, rotation stops.
 
-> Ne posez qu'**une seule carte par vue**. Si plusieurs sont présentes, un
-> avertissement s'affiche en mode édition et une seule est utilisée.
+> Only place **one card per view**. If several are present, a warning is shown in
+> edit mode and only one is used.
 
-### Conditions d'activation
+### Activation conditions
 
-Toutes optionnelles, et cumulables :
+All optional, and combinable:
 
-- **`entity`** — le défilement n'a lieu que si l'entité indiquée est dans un état
-  actif (`on`, `home`, `open` ou `true`). Idéal avec un `input_boolean` pour
-  activer/couper le mode kiosque depuis une automatisation ou un bouton.
-- **`activeHours`** — limite le défilement à une tranche horaire, au format 24 h
-  `HH:MM-HH:MM` (ex. `08:00-20:00`). Les plages de nuit sont gérées
-  (ex. `22:00-06:00`). Un format invalide est signalé dans l'éditeur.
-- **`users`** — restreint le défilement à certaines personnes. Dans l'éditeur,
-  sélectionnez des entités `person`. En YAML, vous pouvez aussi indiquer des
-  identifiants/noms d'utilisateurs ou des entités `person.*` (séparés par des
-  virgules). Vide = tout le monde.
+- **`entity`** — scrolling only happens while the given entity is in an active
+  state (`on`, `home`, `open` or `true`). Ideal with an `input_boolean` to turn
+  kiosk mode on and off from an automation or a button.
+- **`activeHours`** — limits scrolling to a time range, in 24 h format
+  `HH:MM-HH:MM` (e.g. `08:00-20:00`). Overnight ranges are supported
+  (e.g. `22:00-06:00`). An invalid format is flagged in the editor.
+- **`users`** — restricts scrolling to certain people. In the editor, pick
+  `person` entities. In YAML you can also give user ids/names or `person.*`
+  entities (comma separated). Empty = everyone.
 
-### Langue
+### Language
 
-La carte et son éditeur sont traduits en **anglais** et en **français**.
+The card and its editor are translated into **English** and **French**.
 
-- Par défaut (`language: auto`), l'affichage suit la **langue de Home
-  Assistant** de l'utilisateur connecté : rien à configurer.
-- Si Home Assistant est dans une langue non traduite, l'**anglais** est utilisé.
-- Pour forcer une langue, choisissez-la dans **Réglages avancés → Langue**, ou
-  en YAML :
+- By default (`language: auto`), the display follows the **Home Assistant
+  language** of the logged-in user: nothing to configure.
+- If Home Assistant is set to a language that is not translated, **English** is
+  used.
+- To force a language, pick it under **Advanced settings → Language**, or in
+  YAML:
 
 ```yaml
 type: custom:kiosk-autoscroll-card
-language: fr
+language: en
 ```
 
-> Le choix de la langue n'est pas proposé à l'installation : HACS se contente de
-> copier le fichier du plugin et n'offre aucun formulaire de configuration pour
-> les cartes Lovelace. La détection automatique remplace cette étape.
+> The language is not asked for at install time: HACS only copies the plugin
+> file and offers no configuration form for Lovelace cards. Automatic detection
+> replaces that step.
 
-## Quand le défilement se met en pause
+## When scrolling pauses
 
-Le défilement est automatiquement suspendu :
+Scrolling is automatically suspended:
 
-- pendant l'**édition** du tableau de bord ;
-- pendant et juste après une **interaction** utilisateur ;
-- quand l'**onglet/écran n'est pas visible** (économie de ressources) ;
-- en dehors de la **plage horaire** (`activeHours`) ;
-- quand l'**entité** de condition (`entity`) n'est pas active ;
-- quand **aucune carte** n'est active sur la vue (ou que le filtre
-  **utilisateur** ne correspond pas).
+- while **editing** the dashboard;
+- during and just after a user **interaction**;
+- when the **tab/screen is not visible** (to save resources);
+- outside the **time range** (`activeHours`);
+- when the condition **entity** (`entity`) is not active;
+- when **no card** is active on the view (or the **user** filter does not match).
 
-## Exemples
+## Examples
 
-**Tablette murale, défilement lent et continu :**
+**Wall tablet, slow continuous scrolling:**
 
 ```yaml
 type: custom:kiosk-autoscroll-card
@@ -207,7 +201,7 @@ speed: 0.4
 pause: 6000
 ```
 
-**Parcourir chaque vue en 45 s, puis passer à la suivante :**
+**Travel each view in 45 s, then move to the next one:**
 
 ```yaml
 type: custom:kiosk-autoscroll-card
@@ -216,63 +210,52 @@ duration: 45
 rotateViews: true
 ```
 
-**Mode kiosque uniquement en journée et pilotable par un interrupteur :**
+**Kiosk mode during the day only, controlled by a switch:**
 
 ```yaml
 type: custom:kiosk-autoscroll-card
 speed: 1
-entity: input_boolean.mode_kiosque
+entity: input_boolean.kiosk_mode
 activeHours: "07:30-22:00"
 ```
 
-**Défiler seulement pour le compte de l'écran mural :**
+**Scroll only for the wall display account:**
 
 ```yaml
 type: custom:kiosk-autoscroll-card
 users:
-  - person.mur_salon
+  - person.living_room_wall
 ```
 
 ## FAQ
 
-**La carte est visible / prend de la place ?**
-Non. En utilisation normale elle est **totalement invisible et n'occupe aucune
-place** : dans une vue **sections**, le conteneur de grille qui l'entoure est
-masqué lui aussi, donc aucune cellule vide ne subsiste. Elle n'affiche un encart
-(titre et résumé des réglages) qu'en **mode édition**, pour rester repérable.
+**Is the card visible / does it take up space?**
+No. In normal use it is **completely invisible and takes no space**: in a
+**sections** view, the surrounding grid container is hidden as well, so no empty
+cell is left behind. It only shows a box (title and settings summary) in **edit
+mode**, so you can still find it.
 
-**Le défilement continue alors que j'ai décoché « activé » / que je ne suis pas
-l'utilisateur autorisé ?**
-Corrigé en 2.3.0. Une carte présente mais désactivée (ou interdite à
-l'utilisateur courant) interrompt désormais aussi une rotation globale héritée
-d'une autre vue.
+**How do I change the language?**
+It follows the Home Assistant language automatically. To force it, use the
+`language` option (`auto`, `en`, `fr`) under **Advanced settings**.
 
-**La rotation passe par des vues que je ne veux pas afficher.**
-Depuis la 2.3.0, les **sous-vues** (`subview: true`) et les **vues masquées**
-(`visible`) sont automatiquement exclues de la rotation.
+**Can I remove the scrollbar?**
+Yes: enable `hideScrollbar` (Advanced settings). It comes back in edit mode and
+as soon as the card is removed.
 
-**Rien ne défile.**
-Vérifiez que vous n'êtes pas en mode édition, que la page contient assez de
-contenu pour défiler, et que les éventuelles conditions (`entity`, `activeHours`,
-`users`) sont remplies. Pensez à vider le cache du navigateur après une mise à
-jour.
+**Nothing scrolls.**
+Check that you are not in edit mode, that the page has enough content to scroll,
+and that any conditions (`entity`, `activeHours`, `users`) are met. Remember to
+clear the browser cache after an update.
 
-**Comment changer la langue ?**
-Elle suit automatiquement celle de Home Assistant. Pour la forcer, utilisez
-l'option `language` (`auto`, `en`, `fr`) dans **Réglages avancés**.
-
-**Peut-on enlever la barre de défilement ?**
-Oui : activez `hideScrollbar` (Réglages avancés). Elle réapparaît en mode
-édition et dès que la carte est retirée.
-
-**Comment ralentir davantage ?**
-Diminuez `speed` (ex. `0.25`) ou passez en `mode: duration` avec une grande
+**How do I make it slower?**
+Lower `speed` (e.g. `0.25`) or switch to `mode: duration` with a large
 `duration`.
 
-**Dans quel sens le défilement reprend-il après que j'ai touché l'écran ?**
-Il reprend dans le sens où il allait juste avant votre intervention, depuis la
-position où vous l'avez laissé.
+**Which way does it resume after I touch the screen?**
+It resumes in the direction it was going just before you stepped in, from the
+position where you left it.
 
-## Licence
+## License
 
-MIT — voir [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
