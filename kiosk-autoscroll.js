@@ -10,6 +10,7 @@
     pause: 4000,
     pauseOnInteraction: 8000,
     easing: true,
+    hideScrollbar: false,
     rotateViews: false,
     entity: null,
     activeHours: null,
@@ -140,6 +141,59 @@
       if (el.children) queue.push.apply(queue, el.children);
     }
     return best || document.scrollingElement || document.documentElement;
+  }
+
+  // --- Masquage de la barre de defilement ---------------------------------
+  // Firefox/Edge acceptent des styles inline ; WebKit exige une regle
+  // ::-webkit-scrollbar, qu'il faut injecter dans le root du scroller
+  // (shadow root ou document) car une feuille globale n'y entre pas.
+  const SB_ATTR = "data-kiosk-noscrollbar";
+  const SB_RULE =
+    "[" + SB_ATTR + "]::-webkit-scrollbar{display:none!important;" +
+    "width:0!important;height:0!important}";
+  const styledRoots = new WeakSet();
+  let sbEl = null;
+  let sbPrev = null;
+
+  function injectScrollbarStyle(root) {
+    if (!root || styledRoots.has(root)) return;
+    try {
+      const target = root.nodeType === 9 ? root.head : root;
+      if (!target || !target.appendChild) return;
+      const st = document.createElement("style");
+      st.setAttribute("data-kiosk-autoscroll", "");
+      st.textContent = SB_RULE;
+      target.appendChild(st);
+      styledRoots.add(root);
+    } catch (e) {}
+  }
+
+  function releaseScrollbar() {
+    if (!sbEl) return;
+    try {
+      sbEl.removeAttribute(SB_ATTR);
+      sbEl.style.scrollbarWidth = sbPrev ? sbPrev.sw : "";
+      sbEl.style.msOverflowStyle = sbPrev ? sbPrev.ms : "";
+    } catch (e) {}
+    sbEl = null;
+    sbPrev = null;
+  }
+
+  function hideScrollbarOn(el) {
+    if (!el) { releaseScrollbar(); return; }
+    if (sbEl === el && el.isConnected) return;
+    releaseScrollbar();
+    try {
+      sbPrev = { sw: el.style.scrollbarWidth, ms: el.style.msOverflowStyle };
+      el.style.scrollbarWidth = "none";
+      el.style.msOverflowStyle = "none";
+      el.setAttribute(SB_ATTR, "");
+      injectScrollbarStyle(el.getRootNode ? el.getRootNode() : document);
+      sbEl = el;
+    } catch (e) {
+      sbEl = null;
+      sbPrev = null;
+    }
   }
 
   let cachedScroller = null;
@@ -289,6 +343,7 @@
   });
 
   function onNav() {
+    releaseScrollbar();
     cachedScroller = null;
     acc = 0;
     dir = 1;
@@ -329,6 +384,7 @@
     }
   }
   function stop() {
+    releaseScrollbar();
     if (rafId !== null) {
       cancelAnimationFrame(rafId);
       rafId = null;
@@ -360,7 +416,7 @@
   // Retourne le nombre de ms a attendre avant le prochain passage (0 = frame suivante).
   function step(ts) {
     const entry = resolveEntry();
-    if (!entry) return IDLE_MS;
+    if (!entry) { releaseScrollbar(); return IDLE_MS; }
     const cfg = entry.cfg;
     const hass = entry.hass;
     lastPauseOnInteraction = cfg.pauseOnInteraction;
@@ -374,7 +430,7 @@
       return Math.min(pausedUntil - now, PAUSE_POLL_MS);
     }
     if (document.hidden) { lastActive = 0; return IDLE_MS; }
-    if (isEditMode()) { lastActive = 0; return IDLE_MS; }
+    if (isEditMode()) { lastActive = 0; releaseScrollbar(); return IDLE_MS; }
     if (!withinHours(cfg.activeHours)) { lastActive = 0; return IDLE_MS; }
     if (!entityActive(hass, cfg.entity)) { lastActive = 0; return IDLE_MS; }
 
@@ -386,6 +442,9 @@
     const horiz = isHorizontal(cfg);
     const scroller = getScroller(horiz);
     if (!scroller) return IDLE_MS;
+
+    if (cfg.hideScrollbar) hideScrollbarOn(scroller);
+    else releaseScrollbar();
 
     const max = getMax(scroller, horiz);
     if (max <= 1) return IDLE_MS;
@@ -497,6 +556,13 @@
     }
     if (c.activeHours && !validHours(c.activeHours)) {
       throw new Error("activeHours doit etre au format HH:MM-HH:MM (ex. 08:00-20:00).");
+    }
+    const bools = ["easing", "hideScrollbar", "rotateViews", "enabled"];
+    for (let i = 0; i < bools.length; i++) {
+      const k = bools[i];
+      if (c[k] !== undefined && c[k] !== null && typeof c[k] !== "boolean") {
+        throw new Error(k + " doit etre vrai ou faux.");
+      }
     }
     if (c.entity !== undefined && c.entity !== null && typeof c.entity !== "string") {
       throw new Error("entity doit etre un identifiant d'entite.");
@@ -661,6 +727,7 @@
     speed: "Vitesse",
     duration: "Durée d'un aller",
     easing: "Ralentir en douceur aux extrémités",
+    hideScrollbar: "Masquer la barre de défilement",
     pause: "Pause aux extrémités",
     pauseOnInteraction: "Pause après une interaction",
     rotateViews: "Faire défiler tout le tableau de bord",
@@ -675,6 +742,7 @@
     speed: "Plus la valeur est grande, plus c'est rapide (ex. 0.25 = très lent, 1 = normal, 3 = rapide).",
     duration: "Temps, en secondes, pour parcourir toute la vue d'un bout à l'autre.",
     easing: "Le défilement ralentit en approchant des extrémités (mode vitesse uniquement).",
+    hideScrollbar: "Cache la barre de défilement pour un rendu plein écran. Le défilement au doigt ou à la molette reste possible. Réaffichée en mode édition.",
     pause: "Temps d'arrêt à chaque extrémité, en millisecondes (4000 = 4 s).",
     pauseOnInteraction: "Après un toucher, un clic ou la molette, délai avant reprise (en ms).",
     rotateViews: "En bas, passe à la vue suivante. Le défilement couvre alors tout le tableau de bord ; une carte posée sur une autre page reste prioritaire sur cette page.",
@@ -700,6 +768,7 @@
           { value: "horizontal", label: "Horizontal (gauche/droite)" }
         ] } } },
         { name: "easing", selector: { boolean: {} } },
+        { name: "hideScrollbar", selector: { boolean: {} } },
         { name: "pauseOnInteraction", selector: { number: { min: 0, step: 500, mode: "box", unit_of_measurement: "ms" } } },
         { name: "rotateViews", selector: { boolean: {} } },
         { name: "entity", selector: { entity: {} } },

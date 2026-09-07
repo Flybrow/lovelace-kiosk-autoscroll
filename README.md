@@ -40,6 +40,7 @@ ailleurs — ça ne défile **que** là où vous avez ajouté la carte.
 - 🌊 **Fluide** : moteur `requestAnimationFrame`, avec ralenti doux aux extrémités.
 - ⏱️ **Deux modes** : vitesse constante ou durée de parcours constante.
 - ↕️ **Vertical ou horizontal**.
+- 🫥 **Plein écran** : masquage optionnel de la barre de défilement.
 - 🔁 **Rotation** : une seule carte peut faire défiler tout le tableau de bord.
 - 🙅 **Respectueux** : se met en pause dès que l'utilisateur touche l'écran,
   puis reprend là où il en était.
@@ -92,6 +93,7 @@ déjà correctement.
 | `duration`           | nombre (s)      | `60`       | Durée d'un aller (mode `duration`).                |
 | `axis`               | `vertical`/`horizontal` | `vertical` | Sens du défilement.                       |
 | `easing`             | booléen         | `true`     | Ralenti progressif aux extrémités.                 |
+| `hideScrollbar`      | booléen         | `false`    | Masque la barre de défilement.                     |
 | `pause`              | nombre (ms)     | `4000`     | Pause à chaque extrémité.                          |
 | `pauseOnInteraction` | nombre (ms)     | `8000`     | Pause après une interaction utilisateur.           |
 | `rotateViews`        | booléen         | `false`    | Fait défiler tout le tableau de bord, vue par vue. |
@@ -113,6 +115,11 @@ déjà correctement.
   chargent, graphiques qui s'agrandissent…).
 - **`axis`** — `vertical` (haut/bas, défaut) ou `horizontal` (gauche/droite),
   utile pour les vues en colonnes ou les panneaux larges.
+- **`hideScrollbar`** (défaut `false`) — masque la barre de défilement de la vue
+  pour un rendu plein écran, sans changer le comportement : le défilement au
+  doigt, à la molette ou au clavier reste possible. La barre est **rétablie
+  automatiquement** en mode édition, en quittant la vue et si vous retirez la
+  carte. Fonctionne aussi bien sur Chrome/WebView que Firefox et Safari.
 
 ### Pauses
 
@@ -225,6 +232,10 @@ Vérifiez que vous n'êtes pas en mode édition, que la page contient assez de
 contenu pour défiler, et que les éventuelles conditions (`entity`, `activeHours`,
 `users`) sont remplies. Pensez à vider le cache du navigateur après une mise à
 jour.
+
+**Peut-on enlever la barre de défilement ?**
+Oui : activez `hideScrollbar` (Réglages avancés). Elle réapparaît en mode
+édition et dès que la carte est retirée.
 
 **Comment ralentir davantage ?**
 Diminuez `speed` (ex. `0.25`) ou passez en `mode: duration` avec une grande

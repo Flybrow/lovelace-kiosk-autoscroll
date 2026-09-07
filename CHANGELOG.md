@@ -1,5 +1,13 @@
 # Journal des modifications
 
+## 2.4.0 — 7 septembre 2026
+
+- **Nouvelle option `hideScrollbar`** (Réglages avancés, désactivée par défaut) :
+  masque la barre de défilement de la vue pour un rendu plein écran, sans
+  empêcher le défilement manuel. Compatible Chrome/WebView, Firefox et Safari.
+  La barre est rétablie automatiquement en mode édition, au changement de vue et
+  au retrait de la carte.
+
 ## 2.3.0 — 7 septembre 2026
 
 - **Invisibilité totale en production** : dans les vues « sections » (Home
