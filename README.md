@@ -8,6 +8,8 @@
 [![Validate](https://github.com/Flybrow/lovelace-kiosk-autoscroll/actions/workflows/validate.yml/badge.svg)](https://github.com/Flybrow/lovelace-kiosk-autoscroll/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+🇬🇧 **[English version](README.en.md)**
+
 Plugin Lovelace qui fait **défiler automatiquement vos vues Home Assistant**, de
 haut en bas puis de bas en haut, en boucle — un vrai **mode kiosque** pour écrans
 muraux, tablettes et tableaux de bord de supervision.
@@ -28,6 +30,7 @@ ailleurs — ça ne défile **que** là où vous avez ajouté la carte.
   - [Pauses](#pauses)
   - [Rotation de tout le tableau de bord](#rotation-de-tout-le-tableau-de-bord)
   - [Conditions d'activation](#conditions-dactivation)
+  - [Langue](#langue)
 - [Quand le défilement se met en pause](#quand-le-défilement-se-met-en-pause)
 - [Exemples](#exemples)
 - [FAQ](#faq)
@@ -45,7 +48,8 @@ ailleurs — ça ne défile **que** là où vous avez ajouté la carte.
 - 🙅 **Respectueux** : se met en pause dès que l'utilisateur touche l'écran,
   puis reprend là où il en était.
 - 🔧 **Conditionnel** : par utilisateur, par entité, par plage horaire.
-- 🖥️ **Éditeur graphique** intégré, en français.
+- 🌍 **Multilingue** : anglais et français, selon la langue de Home Assistant.
+- 🖥️ **Éditeur graphique** intégré.
 
 ## Installation
 
@@ -100,6 +104,7 @@ déjà correctement.
 | `entity`             | entité          | —          | N'active le défilement que si l'entité est allumée.|
 | `activeHours`        | texte           | —          | Plage horaire d'activité, ex. `08:00-20:00`.       |
 | `users`              | liste           | —          | Limite à certaines personnes / utilisateurs.       |
+| `language`           | `auto`/`en`/`fr`| `auto`     | Langue de la carte et de son éditeur.              |
 
 ### Défilement
 
@@ -160,6 +165,25 @@ Toutes optionnelles, et cumulables :
   sélectionnez des entités `person`. En YAML, vous pouvez aussi indiquer des
   identifiants/noms d'utilisateurs ou des entités `person.*` (séparés par des
   virgules). Vide = tout le monde.
+
+### Langue
+
+La carte et son éditeur sont traduits en **anglais** et en **français**.
+
+- Par défaut (`language: auto`), l'affichage suit la **langue de Home
+  Assistant** de l'utilisateur connecté : rien à configurer.
+- Si Home Assistant est dans une langue non traduite, l'**anglais** est utilisé.
+- Pour forcer une langue, choisissez-la dans **Réglages avancés → Langue**, ou
+  en YAML :
+
+```yaml
+type: custom:kiosk-autoscroll-card
+language: fr
+```
+
+> Le choix de la langue n'est pas proposé à l'installation : HACS se contente de
+> copier le fichier du plugin et n'offre aucun formulaire de configuration pour
+> les cartes Lovelace. La détection automatique remplace cette étape.
 
 ## Quand le défilement se met en pause
 
@@ -232,6 +256,10 @@ Vérifiez que vous n'êtes pas en mode édition, que la page contient assez de
 contenu pour défiler, et que les éventuelles conditions (`entity`, `activeHours`,
 `users`) sont remplies. Pensez à vider le cache du navigateur après une mise à
 jour.
+
+**Comment changer la langue ?**
+Elle suit automatiquement celle de Home Assistant. Pour la forcer, utilisez
+l'option `language` (`auto`, `en`, `fr`) dans **Réglages avancés**.
 
 **Peut-on enlever la barre de défilement ?**
 Oui : activez `hideScrollbar` (Réglages avancés). Elle réapparaît en mode

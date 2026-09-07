@@ -1,29 +1,40 @@
 # Journal des modifications
 
-## 2.4.0 — 7 septembre 2026
+🇬🇧 **[English version](CHANGELOG.en.md)**
 
+## 2.5.0 — 7 septembre 2026
+
+Regroupe les versions 2.3.0 et 2.4.0, publiées le même jour.
+
+### Nouveautés
+
+- **Anglais et français** : la carte et son éditeur sont désormais traduits.
+  L'affichage suit automatiquement la **langue de Home Assistant** de
+  l'utilisateur connecté, avec repli sur l'**anglais** pour toute autre langue.
+  Nouvelle option **`language`** (`auto` par défaut, `en`, `fr`) pour forcer la
+  langue. Documentation anglaise dans [README.en.md](README.en.md).
 - **Nouvelle option `hideScrollbar`** (Réglages avancés, désactivée par défaut) :
   masque la barre de défilement de la vue pour un rendu plein écran, sans
   empêcher le défilement manuel. Compatible Chrome/WebView, Firefox et Safari.
   La barre est rétablie automatiquement en mode édition, au changement de vue et
   au retrait de la carte.
-
-## 2.3.0 — 7 septembre 2026
-
 - **Invisibilité totale en production** : dans les vues « sections » (Home
   Assistant 2024.3+), la carte ne laisse plus de cellule vide dans la grille —
   le conteneur qui l'entoure est masqué avec elle. Emprise nulle également
   déclarée via `getGridOptions()`.
-- **Correction** : une carte présente mais **désactivée**, ou **interdite à
-  l'utilisateur** courant, n'interrompait pas la rotation globale héritée d'une
-  autre vue ; le défilement continuait à tort (et contournait le filtre
-  utilisateur).
-- **Correction** : la rotation de tableau de bord traversait les **sous-vues**
-  (`subview: true`) et les **vues masquées** (`visible`). Elles sont désormais
-  exclues.
-- **Correction** : la pause consécutive à une interaction n'était pas
-  réinitialisée lors d'un changement de vue ; la nouvelle vue restait figée
-  jusqu'à 8 s.
+
+### Corrections
+
+- Une carte présente mais **désactivée**, ou **interdite à l'utilisateur**
+  courant, n'interrompait pas la rotation globale héritée d'une autre vue ; le
+  défilement continuait à tort (et contournait le filtre utilisateur).
+- La rotation de tableau de bord traversait les **sous-vues** (`subview: true`)
+  et les **vues masquées** (`visible`). Elles sont désormais exclues.
+- La pause consécutive à une interaction n'était pas réinitialisée lors d'un
+  changement de vue ; la nouvelle vue restait figée jusqu'à 8 s.
+
+### Divers
+
 - **Économie de ressources** : hors plage horaire, entité inactive, mode édition
   ou pause, la boucle d'animation ne tourne plus à 60 images/s — elle passe sur
   un minuteur (1 s au repos, 250 ms pendant les pauses).

@@ -11,12 +11,165 @@
     pauseOnInteraction: 8000,
     easing: true,
     hideScrollbar: false,
+    language: "auto",
     rotateViews: false,
     entity: null,
     activeHours: null,
     users: null,
     enabled: true
   };
+
+  // --- Traductions ---------------------------------------------------------
+  // L'anglais est la langue de repli. La langue affichee suit celle de Home
+  // Assistant (hass.locale.language), sauf si l'option `language` la force.
+  const STRINGS = {
+    en: {
+      cardName: "Kiosk Auto Scroll",
+      cardDescription: "Invisible card: enables automatic scrolling (kiosk mode) on this dashboard.",
+      cardDesc: "Invisible card: enables automatic scrolling (kiosk mode) on this dashboard. Hidden outside edit mode.",
+      statMode: "Mode ",
+      statAxis: " • axis ",
+      statRotate: " • rotation ",
+      statUsers: " • user(s) ",
+      modeSpeedShort: "constant speed",
+      modeDurationShort: "fixed duration",
+      axisVerticalShort: "vertical",
+      axisHorizontalShort: "horizontal",
+      yes: "yes",
+      no: "no",
+      allUsers: "everyone",
+      warnMultiple: "⚠ Several Kiosk cards on this page: only one is used. Keep just one.",
+      advanced: "Advanced settings (optional)",
+      hoursError: "⚠ Invalid format. Expected HH:MM-HH:MM (e.g. 08:00-20:00).",
+      optSpeed: "Constant speed",
+      optDuration: "Constant duration (travel in X s)",
+      optVertical: "Vertical (up/down)",
+      optHorizontal: "Horizontal (left/right)",
+      optLangAuto: "Automatic (Home Assistant language)",
+      optLangEn: "English",
+      optLangFr: "Français",
+      labels: {
+        mode: "Scrolling mode",
+        axis: "Scrolling direction",
+        speed: "Speed",
+        duration: "Duration of one pass",
+        easing: "Slow down gently at the ends",
+        hideScrollbar: "Hide the scrollbar",
+        pause: "Pause at the ends",
+        pauseOnInteraction: "Pause after an interaction",
+        rotateViews: "Scroll through the whole dashboard",
+        entity: "Only run if an entity is on",
+        activeHours: "Active time range",
+        users: "Restrict to certain users",
+        language: "Language"
+      },
+      helpers: {
+        mode: "“Constant speed”: a fixed speed. “Constant duration”: the view is travelled in a chosen time, whatever its length.",
+        axis: "Vertical (top to bottom) or horizontal (column views, wide panels).",
+        speed: "The higher the value, the faster (e.g. 0.25 = very slow, 1 = normal, 3 = fast).",
+        duration: "Time, in seconds, to travel the whole view from end to end.",
+        easing: "Scrolling slows down near the ends (speed mode only).",
+        hideScrollbar: "Hides the scrollbar for a full-screen look. Touch and wheel scrolling still work. Restored in edit mode.",
+        pause: "Dwell time at each end, in milliseconds (4000 = 4 s).",
+        pauseOnInteraction: "After a touch, click or wheel, delay before resuming (in ms).",
+        rotateViews: "At the bottom, move to the next view. Scrolling then covers the whole dashboard; a card placed on another page takes priority there.",
+        entity: "Scrolling only happens if this entity is on / home / open (e.g. an input_boolean).",
+        activeHours: "Limits scrolling to a time range, e.g. 08:00-20:00 (overnight ranges supported).",
+        users: "Choose who is allowed. Empty = everyone.",
+        language: "Language of this card and its editor. Automatic follows the Home Assistant language."
+      }
+    },
+    fr: {
+      cardName: "Kiosk Auto Scroll",
+      cardDescription: "Carte invisible : active le defilement automatique (mode kiosque) sur ce tableau de bord.",
+      cardDesc: "Carte invisible : active le défilement automatique (mode kiosque) sur ce tableau de bord. Invisible hors édition.",
+      statMode: "Mode ",
+      statAxis: " • axe ",
+      statRotate: " • rotation ",
+      statUsers: " • utilisateur(s) ",
+      modeSpeedShort: "vitesse fixe",
+      modeDurationShort: "durée fixe",
+      axisVerticalShort: "vertical",
+      axisHorizontalShort: "horizontal",
+      yes: "oui",
+      no: "non",
+      allUsers: "tous",
+      warnMultiple: "⚠ Plusieurs cartes Kiosk sur cette page : une seule est utilisée. N'en gardez qu'une.",
+      advanced: "Réglages avancés (optionnel)",
+      hoursError: "⚠ Format invalide. Attendu HH:MM-HH:MM (ex. 08:00-20:00).",
+      optSpeed: "Vitesse constante",
+      optDuration: "Durée constante (parcours en X s)",
+      optVertical: "Vertical (haut/bas)",
+      optHorizontal: "Horizontal (gauche/droite)",
+      optLangAuto: "Automatique (langue de Home Assistant)",
+      optLangEn: "English",
+      optLangFr: "Français",
+      labels: {
+        mode: "Mode de défilement",
+        axis: "Sens du défilement",
+        speed: "Vitesse",
+        duration: "Durée d'un aller",
+        easing: "Ralentir en douceur aux extrémités",
+        hideScrollbar: "Masquer la barre de défilement",
+        pause: "Pause aux extrémités",
+        pauseOnInteraction: "Pause après une interaction",
+        rotateViews: "Faire défiler tout le tableau de bord",
+        entity: "Activer seulement si une entité est allumée",
+        activeHours: "Plage horaire d'activité",
+        users: "Limiter à certains utilisateurs",
+        language: "Langue"
+      },
+      helpers: {
+        mode: "« Vitesse constante » : une vitesse fixe. « Durée constante » : la vue est parcourue dans un temps choisi, quelle que soit sa longueur.",
+        axis: "Vertical (de haut en bas) ou horizontal (vues en colonnes, panneaux larges).",
+        speed: "Plus la valeur est grande, plus c'est rapide (ex. 0.25 = très lent, 1 = normal, 3 = rapide).",
+        duration: "Temps, en secondes, pour parcourir toute la vue d'un bout à l'autre.",
+        easing: "Le défilement ralentit en approchant des extrémités (mode vitesse uniquement).",
+        hideScrollbar: "Cache la barre de défilement pour un rendu plein écran. Le défilement au doigt ou à la molette reste possible. Réaffichée en mode édition.",
+        pause: "Temps d'arrêt à chaque extrémité, en millisecondes (4000 = 4 s).",
+        pauseOnInteraction: "Après un toucher, un clic ou la molette, délai avant reprise (en ms).",
+        rotateViews: "En bas, passe à la vue suivante. Le défilement couvre alors tout le tableau de bord ; une carte posée sur une autre page reste prioritaire sur cette page.",
+        entity: "Le défilement n'a lieu que si cette entité est on / home / open (ex. un input_boolean).",
+        activeHours: "Limite le défilement à une tranche horaire, ex. 08:00-20:00 (gère aussi la nuit).",
+        users: "Choisissez les personnes autorisées. Vide = tout le monde.",
+        language: "Langue de cette carte et de son éditeur. Automatique suit la langue de Home Assistant."
+      }
+    }
+  };
+
+  const FALLBACK_LANG = "en";
+
+  function normalizeLang(v) {
+    if (!v) return null;
+    const code = String(v).toLowerCase().split("-")[0];
+    return STRINGS[code] ? code : null;
+  }
+
+  // Langue effective : option `language` > langue de Home Assistant > anglais.
+  function resolveLang(cfg, hass) {
+    const forced = (cfg && cfg.language && cfg.language !== "auto")
+      ? normalizeLang(cfg.language)
+      : null;
+    if (forced) return forced;
+    let haLang = null;
+    if (hass) haLang = (hass.locale && hass.locale.language) || hass.language || null;
+    return normalizeLang(haLang) || FALLBACK_LANG;
+  }
+
+  function t(lang, key) {
+    const dict = STRINGS[lang] || STRINGS[FALLBACK_LANG];
+    if (dict[key] !== undefined) return dict[key];
+    const fb = STRINGS[FALLBACK_LANG][key];
+    return fb !== undefined ? fb : key;
+  }
+
+  function tSub(lang, group, key) {
+    const dict = STRINGS[lang] || STRINGS[FALLBACK_LANG];
+    const g = dict[group] || {};
+    if (g[key] !== undefined) return g[key];
+    const fb = STRINGS[FALLBACK_LANG][group] || {};
+    return fb[key] !== undefined ? fb[key] : key;
+  }
 
   const EASE_ZONE = 120;
   const MIN_EASE = 0.2;
@@ -530,20 +683,20 @@
   // Valide la config : Lovelace attend une exception pour afficher l'erreur a l'edition.
   function validateConfig(c) {
     if (c === null || typeof c !== "object") {
-      throw new Error("Configuration invalide.");
+      throw new Error("Invalid configuration.");
     }
     if (c.mode !== undefined && c.mode !== "speed" && c.mode !== "duration") {
-      throw new Error("mode doit valoir 'speed' ou 'duration'.");
+      throw new Error("mode must be 'speed' or 'duration'.");
     }
     if (c.axis !== undefined && c.axis !== "vertical" && c.axis !== "horizontal") {
-      throw new Error("axis doit valoir 'vertical' ou 'horizontal'.");
+      throw new Error("axis must be 'vertical' or 'horizontal'.");
     }
     const positive = ["speed", "duration", "interval"];
     for (let i = 0; i < positive.length; i++) {
       const k = positive[i];
       if (c[k] !== undefined && c[k] !== null) {
         const n = Number(c[k]);
-        if (isNaN(n) || n <= 0) throw new Error(k + " doit etre un nombre strictement positif.");
+        if (isNaN(n) || n <= 0) throw new Error(k + " must be a number greater than zero.");
       }
     }
     const nonNeg = ["pause", "pauseOnInteraction"];
@@ -551,21 +704,25 @@
       const k = nonNeg[i];
       if (c[k] !== undefined && c[k] !== null) {
         const n = Number(c[k]);
-        if (isNaN(n) || n < 0) throw new Error(k + " doit etre un nombre positif ou nul.");
+        if (isNaN(n) || n < 0) throw new Error(k + " must be zero or a positive number.");
       }
     }
     if (c.activeHours && !validHours(c.activeHours)) {
-      throw new Error("activeHours doit etre au format HH:MM-HH:MM (ex. 08:00-20:00).");
+      throw new Error("activeHours must use the HH:MM-HH:MM format (e.g. 08:00-20:00).");
     }
     const bools = ["easing", "hideScrollbar", "rotateViews", "enabled"];
     for (let i = 0; i < bools.length; i++) {
       const k = bools[i];
       if (c[k] !== undefined && c[k] !== null && typeof c[k] !== "boolean") {
-        throw new Error(k + " doit etre vrai ou faux.");
+        throw new Error(k + " must be true or false.");
       }
     }
     if (c.entity !== undefined && c.entity !== null && typeof c.entity !== "string") {
-      throw new Error("entity doit etre un identifiant d'entite.");
+      throw new Error("entity must be an entity id.");
+    }
+    if (c.language !== undefined && c.language !== null && c.language !== "auto"
+        && !normalizeLang(c.language)) {
+      throw new Error("language must be 'auto' or one of: " + Object.keys(STRINGS).join(", ") + ".");
     }
   }
 
@@ -578,7 +735,8 @@
     set hass(hass) {
       this._hass = hass;
       const editing = this._isEditing();
-      if (editing !== this._lastEditing) this._render();
+      const lang = resolveLang(this._config, hass);
+      if (editing !== this._lastEditing || lang !== this._lastLang) this._render();
     }
     set editMode(value) {
       this._editMode = value;
@@ -631,6 +789,7 @@
     }
     _render() {
       this._lastEditing = this._isEditing();
+      this._lastLang = resolveLang(this._config, this._hass);
       this.innerHTML = "";
       if (!this._lastEditing) {
         this.style.display = "none";
@@ -644,11 +803,16 @@
       this.style.margin = "";
       this.style.padding = "";
       const c = this._config || {};
-      const mode = c.mode === "duration" ? "durée fixe" : "vitesse fixe";
-      const axis = c.axis === "horizontal" ? "horizontal" : "vertical";
+      const lang = resolveLang(c, this._hass);
+      const mode = c.mode === "duration"
+        ? t(lang, "modeDurationShort")
+        : t(lang, "modeSpeedShort");
+      const axis = c.axis === "horizontal"
+        ? t(lang, "axisHorizontalShort")
+        : t(lang, "axisVerticalShort");
       const users = c.users
         ? (Array.isArray(c.users) ? c.users.join(", ") : String(c.users))
-        : "tous";
+        : t(lang, "allUsers");
 
       const box = document.createElement("div");
       box.style.cssText =
@@ -658,13 +822,11 @@
 
       const title = document.createElement("div");
       title.style.cssText = "font-weight:600;display:flex;align-items:center;gap:6px";
-      title.textContent = "⇳ Kiosk Auto Scroll";
+      title.textContent = "⇳ " + t(lang, "cardName");
 
       const desc = document.createElement("div");
       desc.style.cssText = "opacity:.75;margin-top:4px;line-height:1.4";
-      desc.textContent =
-        "Carte invisible : active le défilement automatique (mode kiosque) " +
-        "sur ce tableau de bord. Invisible hors édition.";
+      desc.textContent = t(lang, "cardDesc");
 
       const stats = document.createElement("div");
       stats.style.cssText = "opacity:.75;margin-top:4px;line-height:1.4";
@@ -674,17 +836,18 @@
         return b;
       };
       stats.append(
-        document.createTextNode("Mode "), bold(mode),
-        document.createTextNode(" • axe "), bold(axis),
-        document.createTextNode(" • rotation "), bold(c.rotateViews ? "oui" : "non"),
-        document.createTextNode(" • utilisateur(s) "), bold(users)
+        document.createTextNode(t(lang, "statMode")), bold(mode),
+        document.createTextNode(t(lang, "statAxis")), bold(axis),
+        document.createTextNode(t(lang, "statRotate")),
+        bold(c.rotateViews ? t(lang, "yes") : t(lang, "no")),
+        document.createTextNode(t(lang, "statUsers")), bold(users)
       );
       box.append(title, desc, stats);
 
       if (connectedCardCount() > 1) {
         const warn = document.createElement("div");
         warn.style.cssText = "margin-top:8px;color:var(--error-color,#db4437);font-weight:600";
-        warn.textContent = "⚠ Plusieurs cartes Kiosk sur cette page : une seule est utilisée. N'en gardez qu'une.";
+        warn.textContent = t(lang, "warnMultiple");
         box.appendChild(warn);
       }
 
@@ -721,51 +884,21 @@
     customElements.define("kiosk-autoscroll-card", KioskAutoscrollCard);
   }
 
-  const LABELS = {
-    mode: "Mode de défilement",
-    axis: "Sens du défilement",
-    speed: "Vitesse",
-    duration: "Durée d'un aller",
-    easing: "Ralentir en douceur aux extrémités",
-    hideScrollbar: "Masquer la barre de défilement",
-    pause: "Pause aux extrémités",
-    pauseOnInteraction: "Pause après une interaction",
-    rotateViews: "Faire défiler tout le tableau de bord",
-    entity: "Activer seulement si une entité est allumée",
-    activeHours: "Plage horaire d'activité",
-    users: "Limiter à certains utilisateurs"
-  };
-
-  const HELPERS = {
-    mode: "« Vitesse constante » : une vitesse fixe. « Durée constante » : la vue est parcourue dans un temps choisi, quelle que soit sa longueur.",
-    axis: "Vertical (de haut en bas) ou horizontal (vues en colonnes, panneaux larges).",
-    speed: "Plus la valeur est grande, plus c'est rapide (ex. 0.25 = très lent, 1 = normal, 3 = rapide).",
-    duration: "Temps, en secondes, pour parcourir toute la vue d'un bout à l'autre.",
-    easing: "Le défilement ralentit en approchant des extrémités (mode vitesse uniquement).",
-    hideScrollbar: "Cache la barre de défilement pour un rendu plein écran. Le défilement au doigt ou à la molette reste possible. Réaffichée en mode édition.",
-    pause: "Temps d'arrêt à chaque extrémité, en millisecondes (4000 = 4 s).",
-    pauseOnInteraction: "Après un toucher, un clic ou la molette, délai avant reprise (en ms).",
-    rotateViews: "En bas, passe à la vue suivante. Le défilement couvre alors tout le tableau de bord ; une carte posée sur une autre page reste prioritaire sur cette page.",
-    entity: "Le défilement n'a lieu que si cette entité est on / home / open (ex. un input_boolean).",
-    activeHours: "Limite le défilement à une tranche horaire, ex. 08:00-20:00 (gère aussi la nuit).",
-    users: "Choisissez les personnes autorisées. Vide = tout le monde."
-  };
-
-  function buildSchema(mode) {
+  function buildSchema(mode, lang) {
     const main = mode === "duration"
       ? { name: "duration", selector: { number: { min: 1, step: 1, mode: "box", unit_of_measurement: "s" } } }
       : { name: "speed", selector: { number: { min: 0.05, step: 0.05, mode: "box" } } };
     return [
       { name: "mode", selector: { select: { mode: "dropdown", options: [
-        { value: "speed", label: "Vitesse constante" },
-        { value: "duration", label: "Durée constante (parcours en X s)" }
+        { value: "speed", label: t(lang, "optSpeed") },
+        { value: "duration", label: t(lang, "optDuration") }
       ] } } },
       main,
       { name: "pause", selector: { number: { min: 0, step: 100, mode: "box", unit_of_measurement: "ms" } } },
-      { type: "expandable", title: "Réglages avancés (optionnel)", icon: "mdi:tune", schema: [
+      { type: "expandable", title: t(lang, "advanced"), icon: "mdi:tune", schema: [
         { name: "axis", selector: { select: { mode: "dropdown", options: [
-          { value: "vertical", label: "Vertical (haut/bas)" },
-          { value: "horizontal", label: "Horizontal (gauche/droite)" }
+          { value: "vertical", label: t(lang, "optVertical") },
+          { value: "horizontal", label: t(lang, "optHorizontal") }
         ] } } },
         { name: "easing", selector: { boolean: {} } },
         { name: "hideScrollbar", selector: { boolean: {} } },
@@ -773,7 +906,12 @@
         { name: "rotateViews", selector: { boolean: {} } },
         { name: "entity", selector: { entity: {} } },
         { name: "activeHours", selector: { text: {} } },
-        { name: "users", selector: { entity: { domain: "person", multiple: true } } }
+        { name: "users", selector: { entity: { domain: "person", multiple: true } } },
+        { name: "language", selector: { select: { mode: "dropdown", options: [
+          { value: "auto", label: t(lang, "optLangAuto") },
+          { value: "en", label: t(lang, "optLangEn") },
+          { value: "fr", label: t(lang, "optLangFr") }
+        ] } } }
       ] }
     ];
   }
@@ -792,15 +930,16 @@
       const self = this;
       if (!this._form) {
         this._form = document.createElement("ha-form");
-        this._form.computeLabel = function (s) { return LABELS[s.name] || s.name; };
-        this._form.computeHelper = function (s) {
-          if (s.name === "activeHours") {
+        this._form.computeLabel = function (sc) {
+          return tSub(self._lang || FALLBACK_LANG, "labels", sc.name);
+        };
+        this._form.computeHelper = function (sc) {
+          const lg = self._lang || FALLBACK_LANG;
+          if (sc.name === "activeHours") {
             const v = self._config && self._config.activeHours;
-            if (v && !validHours(v)) {
-              return "⚠ Format invalide. Attendu HH:MM-HH:MM (ex. 08:00-20:00).";
-            }
+            if (v && !validHours(v)) return t(lg, "hoursError");
           }
-          return HELPERS[s.name] || "";
+          return tSub(lg, "helpers", sc.name);
         };
         this._form.addEventListener("value-changed", function (e) {
           self._config = e.detail.value;
@@ -814,10 +953,13 @@
         this.appendChild(this._form);
       }
       this._form.hass = this._hass;
+      this._lang = resolveLang(this._config, this._hass);
       const mode = this._config.mode || DEFAULTS.mode;
-      if (mode !== this._lastMode) {
-        this._form.schema = buildSchema(mode);
+      // Le schema porte les libelles traduits : le rebatir si mode ou langue change
+      if (mode !== this._lastMode || this._lang !== this._lastLang) {
+        this._form.schema = buildSchema(mode, this._lang);
         this._lastMode = mode;
+        this._lastLang = this._lang;
       }
       this._form.data = this._config;
     }
@@ -827,19 +969,24 @@
     customElements.define("kiosk-autoscroll-card-editor", KioskAutoscrollCardEditor);
   }
 
+  // A ce stade `hass` n'existe pas encore : on se rabat sur la langue du navigateur.
+  const pickerLang = normalizeLang(
+    typeof navigator !== "undefined" ? navigator.language : null
+  ) || FALLBACK_LANG;
+
   window.customCards = window.customCards || [];
   if (!window.customCards.some(function (c) { return c.type === "kiosk-autoscroll-card"; })) {
     window.customCards.push({
       type: "kiosk-autoscroll-card",
-      name: "Kiosk Auto Scroll",
-      description: "Carte invisible : active le defilement automatique (mode kiosque) sur ce tableau de bord.",
+      name: t(pickerLang, "cardName"),
+      description: t(pickerLang, "cardDescription"),
       preview: false,
       documentationURL: "https://github.com/Flybrow/lovelace-kiosk-autoscroll"
     });
   }
 
   console.info(
-    "%c KIOSK-AUTOSCROLL %c charge ",
+    "%c KIOSK-AUTOSCROLL %c loaded ",
     "background:#03a9f4;color:#fff;border-radius:3px 0 0 3px;padding:2px 4px",
     "background:#555;color:#fff;border-radius:0 3px 3px 0;padding:2px 4px"
   );
