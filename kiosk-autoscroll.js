@@ -262,7 +262,16 @@
   function getPos(el, horiz) {
     return horiz ? el.scrollLeft : el.scrollTop;
   }
+  // `behavior: "instant"` : un theme (card-mod...) qui pose `scroll-behavior: smooth`
+  // transformerait sinon chaque ecriture en animation concurrente de la boucle.
   function setPos(el, horiz, v) {
+    if (typeof el.scrollTo === "function") {
+      try {
+        if (horiz) el.scrollTo({ left: v, behavior: "instant" });
+        else el.scrollTo({ top: v, behavior: "instant" });
+        return;
+      } catch (e) {}
+    }
     if (horiz) el.scrollLeft = v;
     else el.scrollTop = v;
   }
@@ -349,21 +358,26 @@
     }
   }
 
+  // Le repli sur le document est lui aussi mis en cache (sinon BFS complet avec
+  // getComputedStyle a chaque image), mais reverifie periodiquement : la vraie
+  // vue defilante peut n'etre rendue qu'apres coup par Lovelace.
+  const FALLBACK_RECHECK_MS = 5000;
   let cachedScroller = null;
   let cachedKey = null;
+  let cachedAt = 0;
   function getScroller(horiz) {
     const key = location.pathname + "|" + (horiz ? "h" : "v");
+    const now = Date.now();
     if (cachedScroller && cachedScroller.isConnected && key === cachedKey) {
-      return cachedScroller;
+      const fallback = document.scrollingElement || document.documentElement;
+      if (cachedScroller !== fallback || now - cachedAt < FALLBACK_RECHECK_MS) {
+        return cachedScroller;
+      }
     }
     const found = findScroller(horiz);
-    const fallback = document.scrollingElement || document.documentElement;
-    if (found && found !== fallback) {
-      cachedScroller = found;
-      cachedKey = key;
-    } else {
-      cachedScroller = null;
-    }
+    cachedScroller = found || null;
+    cachedKey = key;
+    cachedAt = now;
     return found;
   }
 
@@ -441,6 +455,40 @@
     return true;
   }
 
+  // Une carte kiosque avec rotation est-elle encore declaree dans le tableau de
+  // bord ? Parcourt vues, sections et piles (cards/card) sans connaitre leur type.
+  const CARD_TYPE = "custom:kiosk-autoscroll-card";
+  function configHasRotatingCard(node, depth) {
+    if (!node || typeof node !== "object" || depth > 12) return false;
+    if (Array.isArray(node)) {
+      for (let i = 0; i < node.length; i++) {
+        if (configHasRotatingCard(node[i], depth + 1)) return true;
+      }
+      return false;
+    }
+    if (node.type === CARD_TYPE && node.rotateViews === true && node.enabled !== false) {
+      return true;
+    }
+    const keys = ["views", "sections", "cards", "card", "badges"];
+    for (let i = 0; i < keys.length; i++) {
+      if (node[keys[i]] && configHasRotatingCard(node[keys[i]], depth + 1)) return true;
+    }
+    return false;
+  }
+
+  const CONTROLLER_RECHECK_MS = 2000;
+  let controllerCheckedAt = 0;
+  // Faux seulement si la config est lisible ET ne contient plus la carte :
+  // une config indisponible ne doit pas couper la rotation.
+  function controllerStillConfigured() {
+    const now = Date.now();
+    if (now - controllerCheckedAt < CONTROLLER_RECHECK_MS) return true;
+    controllerCheckedAt = now;
+    const ll = getLovelace();
+    if (!ll || !ll.config || !Array.isArray(ll.config.views)) return true;
+    return configHasRotatingCard(ll.config, 0);
+  }
+
   let dir = 1;
   let acc = 0;
   let pausedUntil = 0;
@@ -481,6 +529,10 @@
       return null;
     }
     if (globalController) {
+      if (!controllerStillConfigured()) {
+        globalController = null;
+        return null;
+      }
       return { cfg: globalController.cfg, hass: globalController.hass };
     }
     return null;
@@ -490,10 +542,6 @@
     if (!activeCards.size && !globalController) return;
     userActiveUntil = Date.now() + lastPauseOnInteraction;
   }
-
-  ["wheel", "touchstart", "pointerdown", "keydown"].forEach(function (evt) {
-    window.addEventListener(evt, onInteract, { passive: true });
-  });
 
   function onNav() {
     releaseScrollbar();
@@ -507,8 +555,6 @@
     lastTs = 0;
     userActiveUntil = 0;
   }
-  window.addEventListener("location-changed", onNav);
-  window.addEventListener("popstate", onNav);
 
   // Cadence : rAF quand ca defile, minuteur quand c'est inhibe (economie CPU/batterie)
   const IDLE_MS = 1000;
@@ -551,18 +597,52 @@
     if (rafId === null && idleId === null && running()) start();
   }
 
-  document.addEventListener("visibilitychange", function () {
+  function onVisibility() {
     if (document.hidden) stop();
     else ensureRunning();
-  });
+  }
+
+  // Ecouteurs globaux : poses a la premiere carte, retires des que plus aucune
+  // carte ni rotation n'est active. Rien ne reste accroche a la page sinon.
+  const INTERACTION_EVENTS = ["wheel", "touchstart", "pointerdown", "keydown"];
+  let listening = false;
+  function attachListeners() {
+    if (listening) return;
+    listening = true;
+    INTERACTION_EVENTS.forEach(function (evt) {
+      window.addEventListener(evt, onInteract, { passive: true });
+    });
+    window.addEventListener("location-changed", onNav);
+    window.addEventListener("popstate", onNav);
+    document.addEventListener("visibilitychange", onVisibility);
+  }
+  function detachListeners() {
+    if (!listening) return;
+    listening = false;
+    INTERACTION_EVENTS.forEach(function (evt) {
+      window.removeEventListener(evt, onInteract, { passive: true });
+    });
+    window.removeEventListener("location-changed", onNav);
+    window.removeEventListener("popstate", onNav);
+    document.removeEventListener("visibilitychange", onVisibility);
+  }
+
+  // Arret complet : boucle, ecouteurs et references DOM detachees.
+  function shutdown() {
+    stop();
+    detachListeners();
+    cachedScroller = null;
+    lovelaceHost = null;
+  }
 
   function loop(ts) {
     rafId = null;
-    if (!activeCards.size && !globalController) { stop(); return; }
+    if (!activeCards.size && !globalController) { shutdown(); return; }
     let wait = 0;
     try {
       wait = step(ts) || 0;
     } catch (e) {}
+    if (!activeCards.size && !globalController) { shutdown(); return; }
     scheduleNext(wait);
   }
 
@@ -747,6 +827,7 @@
       this._preview = inEditorPreview(this);
       if (!this._preview) {
         activeCards.add(this);
+        attachListeners();
         ensureRunning();
       }
       rerenderCards();
@@ -755,7 +836,8 @@
     disconnectedCallback() {
       activeCards.delete(this);
       this._restoreHosts();
-      if (!running()) stop();
+      if (!activeCards.size && !globalController) shutdown();
+      else if (!running()) stop();
       rerenderCards();
     }
     _isEditing() {

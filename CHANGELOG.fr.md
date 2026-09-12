@@ -2,6 +2,27 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
+## 2.5.2 — 13 septembre 2026
+
+- **Moins de CPU** : quand c'est la page elle-même (et non un conteneur interne)
+  qui défile, le conteneur de défilement était recherché à nouveau à chaque
+  image — un parcours complet du DOM du tableau de bord, environ 60 fois par
+  seconde. Il est désormais mis en cache et revérifié toutes les 5 secondes.
+- **Rien d'actif sans carte** : le plugin n'enregistre plus aucun écouteur à son
+  chargement. Ils sont ajoutés à l'apparition de la première carte et retirés
+  dès qu'aucune carte ni rotation n'est active.
+- **La rotation s'arrête quand sa carte est supprimée** : retirer une carte
+  `rotateViews` depuis une autre vue du même tableau de bord laissait la rotation
+  tourner jusqu'au changement de tableau de bord. Elle s'arrête désormais en
+  2 secondes.
+- Les positions de défilement sont écrites avec `behavior: "instant"`, pour
+  qu'un thème imposant `scroll-behavior: smooth` ne perturbe pas le défilement
+  automatique.
+- Vérifié dans Firefox : le plugin ne déclenche pas l'avertissement console
+  *« effet de positionnement lié au défilement »*, avec ou sans carte. Il
+  n'enregistre aucun écouteur `scroll`. Si cet avertissement apparaît, il vient
+  d'une autre carte qui écoute `scroll`.
+
 ## 2.5.1 — 7 septembre 2026
 
 - **L'anglais devient la documentation par défaut.** HACS ne fait aucune

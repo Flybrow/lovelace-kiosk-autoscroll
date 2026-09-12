@@ -2,6 +2,25 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
+## 2.5.2 — 13 September 2026
+
+- **Lower CPU use**: when the page itself (rather than an inner container) is
+  what scrolls, the scrolling container was searched for again on every frame —
+  a full walk of the dashboard DOM, around 60 times per second. It is now cached
+  and only re-checked every 5 seconds.
+- **Nothing left behind without a card**: the plugin no longer registers any
+  listener when it loads. Listeners are added when the first card appears and
+  removed as soon as no card or rotation is active.
+- **Rotation stops when its card is deleted**: removing a `rotateViews` card
+  while on another view of the same dashboard used to keep the rotation running
+  until you left the dashboard. It now stops within 2 seconds.
+- Scroll positions are written with `behavior: "instant"`, so a theme setting
+  `scroll-behavior: smooth` cannot interfere with automatic scrolling.
+- Checked in Firefox: the plugin does not trigger the *“scroll-linked positioning
+  effect”* console warning, with or without a card. It registers no `scroll`
+  listener. If you see that warning, it comes from another card listening to
+  `scroll`.
+
 ## 2.5.1 — 7 September 2026
 
 - **English is now the default documentation.** HACS performs no language
