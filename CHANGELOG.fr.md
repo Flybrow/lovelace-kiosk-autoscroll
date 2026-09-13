@@ -2,22 +2,56 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
-## 2.5.2 — 13 septembre 2026
+## 2.5.3 — 13 septembre 2026
+
+Regroupe la version 2.5.2, publiée le 13 septembre 2026.
+
+### Fluidité
+
+- **Défilement plus doux sur écrans haute densité** (tablettes, téléphones,
+  écrans HiDPI) : le moteur avançait par pixels CSS entiers, si bien qu'à vitesse
+  normale la vue bougeait une image puis restait immobile la suivante. Il avance
+  désormais au pixel physique (un demi-pixel CSS sur écran x2). Mesuré à
+  `speed: 1` sur écran x2 : mouvement sur **88 % des images au lieu de 44 %**,
+  **3 fois moins d'irrégularité**, vitesse identique, sous Firefox comme sous
+  Chromium. Un écran standard x1 ne peut pas afficher plus fin qu'un pixel : pas
+  de changement visible dessus.
+- Les positions de défilement sont écrites avec `behavior: "instant"`, pour
+  qu'un thème imposant `scroll-behavior: smooth` ne perturbe pas le défilement
+  automatique.
+
+### Performances
 
 - **Moins de CPU** : quand c'est la page elle-même (et non un conteneur interne)
   qui défile, le conteneur de défilement était recherché à nouveau à chaque
   image — un parcours complet du DOM du tableau de bord, environ 60 fois par
   seconde. Il est désormais mis en cache et revérifié toutes les 5 secondes.
+- **Beaucoup moins de CPU dans le pire cas** : si le tableau de bord n'était pas
+  détecté (page en cours de chargement, ou structure interne de Home Assistant
+  modifiée), tout le DOM était reparcouru à chaque image. La recherche est
+  désormais retentée toutes les 2 secondes, et les parcours du DOM ne recopient
+  plus leur liste de travail à chaque nœud. Mesuré : temps de script ramené de
+  2,2 s à 0,1 s par tranche de 12 s, deux fois moins de mémoire à ramasser. En
+  fonctionnement normal, le plugin retient ~0,1 Mo et moins de 1 % de CPU.
 - **Rien d'actif sans carte** : le plugin n'enregistre plus aucun écouteur à son
   chargement. Ils sont ajoutés à l'apparition de la première carte et retirés
   dès qu'aucune carte ni rotation n'est active.
+
+### Corrections
+
+- **Le défilement pouvait mettre jusqu'à 5 secondes à démarrer** (régression de
+  la 2.5.2) après le chargement d'un tableau de bord ou un changement de vue,
+  donc à chaque page avec `rotateViews`. Pendant que Lovelace construisait
+  encore la vue, le plugin retenait « rien à faire défiler » pendant 5 secondes.
+  Il réessaie désormais chaque seconde, tout en gardant l'économie de CPU
+  ci-dessus.
 - **La rotation s'arrête quand sa carte est supprimée** : retirer une carte
   `rotateViews` depuis une autre vue du même tableau de bord laissait la rotation
   tourner jusqu'au changement de tableau de bord. Elle s'arrête désormais en
   2 secondes.
-- Les positions de défilement sont écrites avec `behavior: "instant"`, pour
-  qu'un thème imposant `scroll-behavior: smooth` ne perturbe pas le défilement
-  automatique.
+
+### À savoir
+
 - Vérifié dans Firefox : le plugin ne déclenche pas l'avertissement console
   *« effet de positionnement lié au défilement »*, avec ou sans carte. Il
   n'enregistre aucun écouteur `scroll`. Si cet avertissement apparaît, il vient

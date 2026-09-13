@@ -281,9 +281,10 @@
     let bestClient = -1;
     const queue = [document.body];
     let guard = 0;
-    while (queue.length && guard < 20000) {
+    let head = 0;
+    while (head < queue.length && guard < 20000) {
       guard++;
-      const el = queue.shift();
+      const el = queue[head++];
       if (!el) continue;
       try {
         const range = horiz ? el.scrollWidth - el.clientWidth : el.scrollHeight - el.clientHeight;
@@ -375,18 +376,27 @@
       }
     }
     const found = findScroller(horiz);
-    cachedScroller = found || null;
-    cachedKey = key;
-    cachedAt = now;
+    const fallback = document.scrollingElement || document.documentElement;
+    // Un repli non defilable n'est pas memorise : la vue Lovelace est souvent
+    // encore en cours de rendu, il faut la rechercher au prochain passage (1 s)
+    // plutot qu'attendre FALLBACK_RECHECK_MS.
+    if (found && (found !== fallback || getMax(found, horiz) > 1)) {
+      cachedScroller = found;
+      cachedKey = key;
+      cachedAt = now;
+    } else {
+      cachedScroller = null;
+    }
     return found;
   }
 
   function bfsFind(root, predicate) {
     const queue = [root || document.body];
     let guard = 0;
-    while (queue.length && guard < 20000) {
+    let head = 0;
+    while (head < queue.length && guard < 20000) {
       guard++;
-      const el = queue.shift();
+      const el = queue[head++];
       if (!el) continue;
       try {
         if (predicate(el)) return el;
@@ -397,14 +407,23 @@
     return null;
   }
 
+  // Cache negatif : si l'hote Lovelace est introuvable (page en cours de rendu,
+  // structure de HA modifiee), on ne reparcourt pas tout le DOM a chaque image.
+  const LOVELACE_RETRY_MS = 2000;
   let lovelaceHost = null;
+  let lovelaceMissAt = 0;
   function getLovelace() {
     if (lovelaceHost && lovelaceHost.isConnected && lovelaceHost.lovelace) {
       return lovelaceHost.lovelace;
     }
+    const now = Date.now();
+    if (!lovelaceHost && lovelaceMissAt && now - lovelaceMissAt < LOVELACE_RETRY_MS) {
+      return null;
+    }
     lovelaceHost = bfsFind(document.body, function (el) {
       return el.lovelace && typeof el.lovelace.editMode === "boolean";
     });
+    lovelaceMissAt = lovelaceHost ? 0 : now;
     return lovelaceHost ? lovelaceHost.lovelace : null;
   }
 
@@ -490,7 +509,12 @@
   }
 
   let dir = 1;
-  let acc = 0;
+  // Position "virtuelle" flottante : le moteur avance en continu et n'ecrit que
+  // la valeur arrondie au pixel physique (1/devicePixelRatio). Evite l'ancien
+  // pas d'1 px CSS entier qui donnait un mouvement saccade a vitesse lente.
+  let virtualPos = null;
+  let lastWritten = null;
+  let lastScroller = null;
   let pausedUntil = 0;
   let userActiveUntil = 0;
   let newLeg = true;
@@ -546,7 +570,9 @@
   function onNav() {
     releaseScrollbar();
     cachedScroller = null;
-    acc = 0;
+    virtualPos = null;
+    lastWritten = null;
+    lastScroller = null;
     dir = 1;
     newLeg = true;
     pausedUntil = 0;
@@ -633,6 +659,7 @@
     detachListeners();
     cachedScroller = null;
     lovelaceHost = null;
+    lovelaceMissAt = 0;
   }
 
   function loop(ts) {
@@ -683,6 +710,15 @@
     if (max <= 1) return IDLE_MS;
     const pos = getPos(scroller, horiz);
 
+    // Resynchronisation si la position a change hors du moteur : geste de
+    // l'utilisateur, contenu redimensionne, nouveau conteneur, reprise de pause.
+    if (virtualPos === null || scroller !== lastScroller ||
+        lastWritten === null || Math.abs(pos - lastWritten) > 1.5) {
+      virtualPos = pos;
+    }
+    lastScroller = scroller;
+    virtualPos = clamp(virtualPos, 0, max);
+
     const durationMode = cfg.mode === "duration" && cfg.duration > 0;
     let pxMs;
     if (durationMode) {
@@ -693,30 +729,35 @@
       if (lastActive && now - lastActive > 300) {
         legEndTs += now - lastActive;
       }
-      const remaining = dir === 1 ? (max - pos) : pos;
+      const remaining = dir === 1 ? (max - virtualPos) : virtualPos;
       const timeLeft = Math.max(legEndTs - now, 16);
       pxMs = remaining / timeLeft;
     } else {
       const interval = cfg.interval > 0 ? cfg.interval : DEFAULTS.interval;
       pxMs = cfg.speed / interval;
       if (cfg.easing) {
-        const dist = dir === 1 ? (max - pos) : pos;
+        const dist = dir === 1 ? (max - virtualPos) : virtualPos;
         pxMs *= clamp(dist / EASE_ZONE, MIN_EASE, 1);
       }
     }
     lastActive = now;
 
-    acc += dir * pxMs * dt;
-    const stepPx = acc >= 0 ? Math.floor(acc) : Math.ceil(acc);
-    if (stepPx !== 0) {
-      setPos(scroller, horiz, pos + stepPx);
-      acc -= stepPx;
+    virtualPos = clamp(virtualPos + dir * pxMs * dt, 0, max);
+    // Plus petit pas affichable : un pixel physique (0,5 px CSS sur ecran x2)
+    const quantum = 1 / Math.max(1, window.devicePixelRatio || 1);
+    const target = Math.round(virtualPos / quantum) * quantum;
+    if (Math.abs(target - pos) >= quantum / 2) {
+      setPos(scroller, horiz, target);
+      lastWritten = target;
+    } else {
+      lastWritten = pos;
     }
 
     const newPos = getPos(scroller, horiz);
-    if (dir === 1 && newPos >= max - 1) {
+    if (dir === 1 && (virtualPos >= max - 0.5 || newPos >= max - 1)) {
       setPos(scroller, horiz, max);
-      acc = 0;
+      virtualPos = max;
+      lastWritten = max;
       pausedUntil = now + cfg.pause;
       newLeg = true;
       if (cfg.rotateViews && gotoNextView(hass)) {
@@ -724,9 +765,10 @@
       } else {
         dir = -1;
       }
-    } else if (dir === -1 && newPos <= 0) {
+    } else if (dir === -1 && (virtualPos <= 0.5 || newPos <= 0)) {
       setPos(scroller, horiz, 0);
-      acc = 0;
+      virtualPos = 0;
+      lastWritten = 0;
       pausedUntil = now + cfg.pause;
       newLeg = true;
       dir = 1;

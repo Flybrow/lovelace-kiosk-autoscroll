@@ -2,20 +2,51 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
-## 2.5.2 — 13 September 2026
+## 2.5.3 — 13 September 2026
+
+Includes version 2.5.2, released on 13 September 2026.
+
+### Smoothness
+
+- **Smoother scrolling on high-density screens** (tablets, phones, HiDPI
+  monitors): the engine used to move in whole CSS pixels, so at normal speed the
+  view moved one frame and stood still the next. It now moves in physical pixels
+  (half a CSS pixel on a 2× screen). Measured at `speed: 1` on a 2× screen:
+  motion on **88 % of frames instead of 44 %**, **3× less irregular**, same
+  speed, in both Firefox and Chromium. Standard 1× screens cannot display
+  anything finer than one pixel, so they see no change.
+- Scroll positions are written with `behavior: "instant"`, so a theme setting
+  `scroll-behavior: smooth` cannot interfere with automatic scrolling.
+
+### Performance
 
 - **Lower CPU use**: when the page itself (rather than an inner container) is
   what scrolls, the scrolling container was searched for again on every frame —
   a full walk of the dashboard DOM, around 60 times per second. It is now cached
   and only re-checked every 5 seconds.
+- **Much lower CPU use in the worst case**: if the dashboard could not be
+  detected (page still loading, or a change in Home Assistant's internal
+  structure), the whole DOM was searched again on every frame. It is now retried
+  every 2 seconds, and DOM searches no longer copy their work list on every node.
+  Measured: script time down from 2.2 s to 0.1 s per 12 s, half as much garbage
+  memory. In the normal case the plugin keeps about 0.1 MB and under 1 % CPU.
 - **Nothing left behind without a card**: the plugin no longer registers any
   listener when it loads. Listeners are added when the first card appears and
   removed as soon as no card or rotation is active.
+
+### Fixes
+
+- **Scrolling could take up to 5 seconds to start** (regression in 2.5.2) after
+  a dashboard loaded or after moving to another view, so on every page when
+  `rotateViews` is on. While Lovelace was still rendering the view, the plugin
+  remembered "nothing to scroll" for 5 seconds. It now tries again every second,
+  while keeping the CPU saving above.
 - **Rotation stops when its card is deleted**: removing a `rotateViews` card
   while on another view of the same dashboard used to keep the rotation running
   until you left the dashboard. It now stops within 2 seconds.
-- Scroll positions are written with `behavior: "instant"`, so a theme setting
-  `scroll-behavior: smooth` cannot interfere with automatic scrolling.
+
+### Notes
+
 - Checked in Firefox: the plugin does not trigger the *“scroll-linked positioning
   effect”* console warning, with or without a card. It registers no `scroll`
   listener. If you see that warning, it comes from another card listening to
