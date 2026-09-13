@@ -276,34 +276,80 @@
     else el.scrollTop = v;
   }
 
-  function findScroller(horiz) {
+  // Elements dont le defilement ne doit jamais etre pilote (menu lateral de HA).
+  const EXCLUDED_TAGS = { "ha-sidebar": true };
+  // Un conteneur plus petit que cette fraction de la fenetre est une carte a
+  // defilement interne (logbook, liste...), pas la vue.
+  const MIN_VIEW_FRACTION = 0.3;
+
+  function isScrollableContainer(el, horiz) {
+    const range = horiz ? el.scrollWidth - el.clientWidth : el.scrollHeight - el.clientHeight;
+    if (!(range > 50)) return false;
+    const client = horiz ? el.clientWidth : el.clientHeight;
+    const viewport = horiz ? window.innerWidth : window.innerHeight;
+    if (viewport && client < viewport * MIN_VIEW_FRACTION) return false;
+    const st = getComputedStyle(el);
+    const ov = horiz ? st.overflowX : st.overflowY;
+    return ov === "auto" || ov === "scroll" || ov === "overlay";
+  }
+
+  // Remonte depuis la carte, a travers les shadow roots, jusqu'au premier
+  // conteneur qui la fait defiler : c'est par construction la vue affichee,
+  // jamais le menu lateral ni une autre zone de la page.
+  function scrollerFromAnchor(anchor, horiz) {
+    let node = anchor ? (anchor.parentNode || anchor.host || null) : null;
+    let guard = 0;
+    while (node && guard < 400) {
+      guard++;
+      if (node.nodeType === 1 && node !== document.body && node !== document.documentElement) {
+        try {
+          if (isScrollableContainer(node, horiz)) return node;
+        } catch (e) {}
+      }
+      node = node.parentNode || node.host || null;
+    }
+    return null;
+  }
+
+  // Sans carte sur la vue (rotation heritee) : recherche en largeur limitee au
+  // panneau Lovelace si on le connait, et qui ignore toujours le menu lateral.
+  function scrollerFromSearch(horiz) {
+    getLovelace();
+    const root = lovelaceHost && lovelaceHost.isConnected ? lovelaceHost : document.body;
     let best = null;
     let bestClient = -1;
-    const queue = [document.body];
+    const queue = [root];
     let guard = 0;
     let head = 0;
     while (head < queue.length && guard < 20000) {
       guard++;
       const el = queue[head++];
       if (!el) continue;
+      if (EXCLUDED_TAGS[el.localName]) continue;
       try {
-        const range = horiz ? el.scrollWidth - el.clientWidth : el.scrollHeight - el.clientHeight;
-        const client = horiz ? el.clientWidth : el.clientHeight;
-        if (range > 50) {
-          const st = getComputedStyle(el);
-          const ov = horiz ? st.overflowX : st.overflowY;
-          if (ov === "auto" || ov === "scroll" || ov === "overlay") {
-            if (client > bestClient) {
-              best = el;
-              bestClient = client;
-            }
+        if (isScrollableContainer(el, horiz)) {
+          const client = horiz ? el.clientWidth : el.clientHeight;
+          if (client > bestClient) {
+            best = el;
+            bestClient = client;
           }
         }
       } catch (e) {}
       if (el.shadowRoot) queue.push.apply(queue, el.shadowRoot.children);
       if (el.children) queue.push.apply(queue, el.children);
     }
-    return best || document.scrollingElement || document.documentElement;
+    return best;
+  }
+
+  function findScroller(horiz, anchor) {
+    const fallback = document.scrollingElement || document.documentElement;
+    if (anchor && anchor.isConnected) {
+      const own = scrollerFromAnchor(anchor, horiz);
+      if (own) return own;
+      // Aucun ancetre ne defile : c'est le document qui porte la vue.
+      if (getMax(fallback, horiz) > 1) return fallback;
+    }
+    return scrollerFromSearch(horiz) || fallback;
   }
 
   // --- Masquage de la barre de defilement ---------------------------------
@@ -366,7 +412,7 @@
   let cachedScroller = null;
   let cachedKey = null;
   let cachedAt = 0;
-  function getScroller(horiz) {
+  function getScroller(horiz, anchor) {
     const key = location.pathname + "|" + (horiz ? "h" : "v");
     const now = Date.now();
     if (cachedScroller && cachedScroller.isConnected && key === cachedKey) {
@@ -375,7 +421,7 @@
         return cachedScroller;
       }
     }
-    const found = findScroller(horiz);
+    const found = findScroller(horiz, anchor);
     const fallback = document.scrollingElement || document.documentElement;
     // Un repli non defilable n'est pas memorise : la vue Lovelace est souvent
     // encore en cours de rendu, il faut la rechercher au prochain passage (1 s)
@@ -539,7 +585,7 @@
       // Une carte presente mais desactivee (ou interdite a cet utilisateur)
       // doit aussi neutraliser une rotation globale heritee d'une autre vue.
       if (c.enabled === false || !userAllowed(c, card._hass)) { blocked = true; return; }
-      if (!local) local = { cfg: c, hass: card._hass };
+      if (!local) local = { cfg: c, hass: card._hass, card: card };
     });
 
     if (local) {
@@ -557,7 +603,7 @@
         globalController = null;
         return null;
       }
-      return { cfg: globalController.cfg, hass: globalController.hass };
+      return { cfg: globalController.cfg, hass: globalController.hass, card: null };
     }
     return null;
   }
@@ -700,7 +746,7 @@
     }
 
     const horiz = isHorizontal(cfg);
-    const scroller = getScroller(horiz);
+    const scroller = getScroller(horiz, entry.card);
     if (!scroller) return IDLE_MS;
 
     if (cfg.hideScrollbar) hideScrollbarOn(scroller);

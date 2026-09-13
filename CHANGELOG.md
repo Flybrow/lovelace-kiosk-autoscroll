@@ -2,9 +2,9 @@
 
 🇫🇷 **[Version française](CHANGELOG.fr.md)**
 
-## 2.5.3 — 13 September 2026
+## 2.5.4 — 13 September 2026
 
-Includes version 2.5.2, released on 13 September 2026.
+Includes versions 2.5.2 and 2.5.3, released on 13 September 2026.
 
 ### Smoothness
 
@@ -36,6 +36,13 @@ Includes version 2.5.2, released on 13 September 2026.
 
 ### Fixes
 
+- **The side menu scrolled instead of the dashboard** when the browser
+  window was small. The plugin searched the whole page and picked the largest
+  scrollable area, which could be Home Assistant's side menu. It now starts from
+  the card itself and scrolls the view that contains it. On a view without a
+  card (dashboard rotation), the search is limited to the dashboard panel and
+  always ignores the side menu. Scrollable areas smaller than 30 % of the window
+  (logbook card, lists…) are no longer mistaken for the view.
 - **Scrolling could take up to 5 seconds to start** (regression in 2.5.2) after
   a dashboard loaded or after moving to another view, so on every page when
   `rotateViews` is on. While Lovelace was still rendering the view, the plugin

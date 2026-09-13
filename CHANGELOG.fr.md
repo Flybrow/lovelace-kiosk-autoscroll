@@ -2,9 +2,9 @@
 
 🇬🇧 **[English version](CHANGELOG.md)**
 
-## 2.5.3 — 13 septembre 2026
+## 2.5.4 — 13 septembre 2026
 
-Regroupe la version 2.5.2, publiée le 13 septembre 2026.
+Regroupe les versions 2.5.2 et 2.5.3, publiées le 13 septembre 2026.
 
 ### Fluidité
 
@@ -39,6 +39,14 @@ Regroupe la version 2.5.2, publiée le 13 septembre 2026.
 
 ### Corrections
 
+- **Le menu latéral défilait à la place du tableau de bord** quand
+  la fenêtre du navigateur était réduite. Le plugin cherchait dans toute la page
+  la plus grande zone défilable, qui pouvait être le menu latéral de Home
+  Assistant. Il part désormais de la carte elle-même et fait défiler la vue qui
+  la contient. Sur une vue sans carte (rotation du tableau de bord), la
+  recherche est limitée au panneau du tableau de bord et ignore toujours le menu
+  latéral. Les zones défilables plus petites que 30 % de la fenêtre (carte
+  journal, listes…) ne sont plus prises pour la vue.
 - **Le défilement pouvait mettre jusqu'à 5 secondes à démarrer** (régression de
   la 2.5.2) après le chargement d'un tableau de bord ou un changement de vue,
   donc à chaque page avec `rotateViews`. Pendant que Lovelace construisait
